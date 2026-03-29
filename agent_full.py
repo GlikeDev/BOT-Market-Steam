@@ -15,13 +15,6 @@ CURRENCY_NAMES  = {"usd": 1, "rub": 5, "uah": 18, "kzt": 37, "cny": 23}
 
 WAITING_INVENTORY = 1
 
-DEFAULT_WATCHLIST = [
-    {"name": "AK-47 | Redline (Field-Tested)",  "appid": 730},
-    {"name": "AWP | Asiimov (Field-Tested)",     "appid": 730},
-    {"name": "Karambit | Fade (Factory New)",    "appid": 730},
-    {"name": "Sealed Dead Hand Terminal",        "appid": 730},
-]
-
 # --- БД ---
 def init_db():
     conn = sqlite3.connect("prices.db")
@@ -60,17 +53,6 @@ def init_db():
         )
     """)
     conn.commit()
-
-    # Заполняем watchlist дефолтными если пустой
-    count = conn.execute("SELECT COUNT(*) FROM watchlist").fetchone()[0]
-    if count == 0:
-        for item in DEFAULT_WATCHLIST:
-            conn.execute(
-                "INSERT OR IGNORE INTO watchlist VALUES (?,?,?)",
-                (item["name"], item["appid"], int(datetime.now().timestamp()))
-            )
-        conn.commit()
-
     return conn
 
 def load_config_from_db(conn):

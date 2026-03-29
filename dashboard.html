@@ -407,6 +407,26 @@ input[type=range]::-webkit-slider-thumb {
 }
 tr.clickable-row { cursor: pointer; }
 tr.clickable-row:hover td { background: rgba(108,99,255,0.06) !important; }
+.chart-range-wrap {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+}
+.range-btn {
+  padding: 4px 14px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s;
+  letter-spacing: 0.03em;
+}
+.range-btn:hover { color: var(--text); border-color: var(--accent); }
+.range-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 </style>
 </head>
 <body>
@@ -722,6 +742,11 @@ tr.clickable-row:hover td { background: rgba(108,99,255,0.06) !important; }
       </div>
       <div id="item-chart-empty" style="display:none;text-align:center;padding:36px;color:var(--muted);font-size:13px">
         Бот ещё не накопил достаточно данных для графика
+      </div>
+      <div class="chart-range-wrap">
+        <button class="range-btn" id="range-7"   onclick="setTimeRange(7)">7 дней</button>
+        <button class="range-btn active" id="range-30" onclick="setTimeRange(30)">30 дней</button>
+        <button class="range-btn" id="range-all" onclick="setTimeRange(0)">Всё время</button>
       </div>
     </div>
 
@@ -1197,6 +1222,8 @@ async function deleteUser(chatId) {
 
 // --- Item detail modal ---
 let itemPriceChart = null;
+let currentItemAllHistory = [];
+let currentRange = 30;
 const importedItems = new Set(); // items whose Steam history has been imported this session
 
 function findLastBefore(arr, ts) {
@@ -1224,6 +1251,8 @@ function setStatPct(elId, current, oldEntry) {
 }
 
 function showItemStats(history) {
+  currentItemAllHistory = history;
+
   if (!history.length) {
     ['istat-price','istat-1h','istat-24h','istat-volume','istat-min','istat-max'].forEach(id => {
       document.getElementById(id).textContent = '—';
@@ -1233,6 +1262,7 @@ function showItemStats(history) {
     document.getElementById('item-chart-empty').style.display = 'block';
     return;
   }
+
   const prices = history.map(h => h.price);
   const latest = history[history.length - 1];
   const now    = Date.now() / 1000;
@@ -1248,12 +1278,50 @@ function showItemStats(history) {
   setStatPct('istat-1h',  latest.price, findLastBefore(history, now - 3600));
   setStatPct('istat-24h', latest.price, findLastBefore(history, now - 86400));
 
+  applyRangeToChart(currentRange);
+}
+
+function applyRangeToChart(days) {
+  const history = currentItemAllHistory;
+  if (!history.length) return;
+
+  let filtered = history;
+  if (days > 0) {
+    const cutoff = Date.now() / 1000 - days * 86400;
+    filtered = history.filter(h => h.ts >= cutoff);
+  }
+
+  if (!filtered.length) {
+    document.getElementById('item-chart-wrap').style.display = 'none';
+    document.getElementById('item-chart-empty').style.display = 'block';
+    document.getElementById('item-chart-empty').textContent = 'Нет данных за выбранный период';
+    return;
+  }
+
   document.getElementById('item-chart-wrap').style.display = 'block';
   document.getElementById('item-chart-empty').style.display = 'none';
-  renderItemChart(history);
+  renderItemChart(filtered);
+}
+
+function setTimeRange(days) {
+  currentRange = days;
+  ['range-7','range-30','range-all'].forEach(id =>
+    document.getElementById(id).classList.remove('active')
+  );
+  const activeId = days === 7 ? 'range-7' : days === 30 ? 'range-30' : 'range-all';
+  document.getElementById(activeId).classList.add('active');
+  applyRangeToChart(days);
 }
 
 async function openItemDetail(name, appid) {
+  // Сброс диапазона на 30 дней при каждом открытии
+  currentRange = 30;
+  currentItemAllHistory = [];
+  ['range-7','range-30','range-all'].forEach(id =>
+    document.getElementById(id).classList.remove('active')
+  );
+  document.getElementById('range-30').classList.add('active');
+
   document.getElementById('item-modal').classList.add('open');
   document.getElementById('item-modal-name').textContent = name;
   ['istat-price','istat-1h','istat-24h','istat-volume','istat-min','istat-max'].forEach(id => {
@@ -1271,9 +1339,9 @@ async function openItemDetail(name, appid) {
   document.getElementById('item-steam-link').href =
     `https://steamcommunity.com/market/listings/${appid}/${encoded}`;
 
-  // Грузим историю цен и картинку параллельно
+  // Грузим всю историю из БД и картинку параллельно
   const [history] = await Promise.all([
-    fetch(`/api/prices/${encoded}`).then(r => r.json()).catch(() => []),
+    fetch(`/api/prices/${encoded}?days=0`).then(r => r.json()).catch(() => []),
 
     // Картинка через наш прокси (Steam CDN напрямую из браузера не грузится)
     fetch(`/api/steam/item-info/${encoded}`)
@@ -1312,7 +1380,7 @@ async function openItemDetail(name, appid) {
     .then(async result => {
       if (result.ok && !result.skipped && result.inserted > 0) {
         // Появились новые данные — обновляем график
-        const fresh = await fetch(`/api/prices/${encoded}`)
+        const fresh = await fetch(`/api/prices/${encoded}?days=0`)
           .then(r => r.json()).catch(() => []);
         if (fresh.length) showItemStats(fresh);
       } else if (!result.ok && !history.length) {
