@@ -1197,6 +1197,7 @@ async function deleteUser(chatId) {
 
 // --- Item detail modal ---
 let itemPriceChart = null;
+const importedItems = new Set(); // items whose Steam history has been imported this session
 
 function findLastBefore(arr, ts) {
   for (let i = arr.length - 1; i >= 0; i--) {
@@ -1209,46 +1210,85 @@ function downsample(arr, max) {
   if (arr.length <= max) return arr;
   const step = arr.length / max;
   const result = [];
-  for (let i = 0; i < max; i++) {
-    result.push(arr[Math.round(i * step)]);
-  }
+  for (let i = 0; i < max; i++) result.push(arr[Math.round(i * step)]);
   result[result.length - 1] = arr[arr.length - 1];
   return result;
 }
 
-async function openItemDetail(name, appid) {
-  const modal = document.getElementById('item-modal');
-  modal.classList.add('open');
+function setStatPct(elId, current, oldEntry) {
+  const el = document.getElementById(elId);
+  if (!oldEntry) { el.textContent = '—'; el.style.color = 'var(--text)'; return; }
+  const pct = ((current - oldEntry.price) / oldEntry.price) * 100;
+  el.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%';
+  el.style.color = pct > 0 ? 'var(--green)' : pct < 0 ? 'var(--red)' : 'var(--text)';
+}
 
+function showItemStats(history) {
+  if (!history.length) {
+    ['istat-price','istat-1h','istat-24h','istat-volume','istat-min','istat-max'].forEach(id => {
+      document.getElementById(id).textContent = '—';
+      document.getElementById(id).style.color = 'var(--text)';
+    });
+    document.getElementById('item-chart-wrap').style.display = 'none';
+    document.getElementById('item-chart-empty').style.display = 'block';
+    return;
+  }
+  const prices = history.map(h => h.price);
+  const latest = history[history.length - 1];
+  const now    = Date.now() / 1000;
+
+  document.getElementById('istat-price').textContent  = '$' + latest.price.toFixed(2);
+  document.getElementById('istat-price').style.color  = 'var(--text)';
+  document.getElementById('istat-volume').textContent = latest.volume ?? '—';
+  document.getElementById('istat-volume').style.color = 'var(--text)';
+  document.getElementById('istat-min').textContent    = '$' + Math.min(...prices).toFixed(2);
+  document.getElementById('istat-min').style.color    = 'var(--text)';
+  document.getElementById('istat-max').textContent    = '$' + Math.max(...prices).toFixed(2);
+  document.getElementById('istat-max').style.color    = 'var(--text)';
+  setStatPct('istat-1h',  latest.price, findLastBefore(history, now - 3600));
+  setStatPct('istat-24h', latest.price, findLastBefore(history, now - 86400));
+
+  document.getElementById('item-chart-wrap').style.display = 'block';
+  document.getElementById('item-chart-empty').style.display = 'none';
+  renderItemChart(history);
+}
+
+async function openItemDetail(name, appid) {
+  document.getElementById('item-modal').classList.add('open');
   document.getElementById('item-modal-name').textContent = name;
   ['istat-price','istat-1h','istat-24h','istat-volume','istat-min','istat-max'].forEach(id => {
-    const el = document.getElementById(id);
-    el.textContent = '...';
-    el.style.color = 'var(--text)';
+    document.getElementById(id).textContent = '...';
+    document.getElementById(id).style.color = 'var(--text)';
   });
   document.getElementById('item-img-wrap').innerHTML =
     '<div class="item-skin-placeholder">⏳</div>';
-  document.getElementById('item-chart-wrap').style.display = 'block';
-  document.getElementById('item-chart-empty').style.display = 'none';
+  document.getElementById('item-chart-wrap').style.display = 'none';
+  document.getElementById('item-chart-empty').style.display = 'block';
+  document.getElementById('item-chart-empty').textContent =
+    importedItems.has(name) ? 'Нет данных' : '⏳ Загружаю историю со Steam...';
 
   const encoded = encodeURIComponent(name);
   document.getElementById('item-steam-link').href =
     `https://steamcommunity.com/market/listings/${appid}/${encoded}`;
 
-  // Load price history and image in parallel
+  // Грузим историю цен и картинку параллельно
   const [history] = await Promise.all([
     fetch(`/api/prices/${encoded}`).then(r => r.json()).catch(() => []),
+
+    // Картинка через наш прокси (Steam CDN напрямую из браузера не грузится)
     fetch(`/api/steam/item-info/${encoded}`)
       .then(r => r.json())
       .then(data => {
+        const wrap = document.getElementById('item-img-wrap');
         if (data.ok && data.icon_url) {
-          const url = `https://community.cloudflare.steamstatic.com/economy/image/${data.icon_url}/360fx360f`;
-          document.getElementById('item-img-wrap').innerHTML =
-            `<img src="${url}" class="item-skin-img" alt=""
-              onerror="this.parentElement.innerHTML='<div class=\\'item-skin-placeholder\\'>🎮</div>'">`;
+          const img = new Image();
+          img.className = 'item-skin-img';
+          img.alt = name;
+          img.onerror = () => { wrap.innerHTML = '<div class="item-skin-placeholder">🎮</div>'; };
+          img.onload  = () => { wrap.innerHTML = ''; wrap.appendChild(img); };
+          img.src = `/api/steam/image/${data.icon_url}`;
         } else {
-          document.getElementById('item-img-wrap').innerHTML =
-            '<div class="item-skin-placeholder">🎮</div>';
+          wrap.innerHTML = '<div class="item-skin-placeholder">🎮</div>';
         }
       })
       .catch(() => {
@@ -1257,39 +1297,31 @@ async function openItemDetail(name, appid) {
       })
   ]);
 
-  if (!history.length) {
-    ['istat-price','istat-1h','istat-24h','istat-volume','istat-min','istat-max'].forEach(id => {
-      document.getElementById(id).textContent = '—';
-    });
-    document.getElementById('item-chart-wrap').style.display = 'none';
-    document.getElementById('item-chart-empty').style.display = 'block';
-    return;
+  // Показываем текущие данные из БД сразу
+  showItemStats(history);
+
+  // Импортируем историю со Steam в фоне — только один раз на предмет
+  if (!importedItems.has(name)) {
+    importedItems.add(name);
+    fetch(`/api/steam/import-history/${encoded}`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({appid})
+    })
+    .then(r => r.json())
+    .then(async result => {
+      if (result.ok && !result.skipped && result.inserted > 0) {
+        // Появились новые данные — обновляем график
+        const fresh = await fetch(`/api/prices/${encoded}`)
+          .then(r => r.json()).catch(() => []);
+        if (fresh.length) showItemStats(fresh);
+      } else if (!result.ok && !history.length) {
+        document.getElementById('item-chart-empty').textContent =
+          'Ошибка загрузки: ' + (result.error || 'Steam недоступен');
+      }
+    })
+    .catch(() => {});
   }
-
-  const prices = history.map(h => h.price);
-  const latest = history[history.length - 1];
-  const now = Date.now() / 1000;
-  const p1h  = findLastBefore(history, now - 3600);
-  const p24h = findLastBefore(history, now - 86400);
-  const minP = Math.min(...prices);
-  const maxP = Math.max(...prices);
-
-  document.getElementById('istat-price').textContent  = '$' + latest.price.toFixed(2);
-  document.getElementById('istat-volume').textContent = latest.volume ?? '—';
-  document.getElementById('istat-min').textContent    = '$' + minP.toFixed(2);
-  document.getElementById('istat-max').textContent    = '$' + maxP.toFixed(2);
-
-  function setPct(elId, current, old) {
-    const el = document.getElementById(elId);
-    if (!old) { el.textContent = '—'; return; }
-    const pct = ((current - old.price) / old.price) * 100;
-    el.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%';
-    el.style.color = pct > 0 ? 'var(--green)' : pct < 0 ? 'var(--red)' : 'var(--text)';
-  }
-  setPct('istat-1h',  latest.price, p1h);
-  setPct('istat-24h', latest.price, p24h);
-
-  renderItemChart(history);
 }
 
 function renderItemChart(history) {
@@ -1297,13 +1329,12 @@ function renderItemChart(history) {
 
   const display = downsample(history, 300);
   const prices  = display.map(h => h.price);
-
-  const trend = prices[prices.length - 1] >= prices[0];
+  const trend   = prices[prices.length - 1] >= prices[0];
   const lineColor = trend ? '#2ed573' : '#ff4757';
   const fillColor = trend ? 'rgba(46,213,115,0.1)' : 'rgba(255,71,87,0.1)';
 
   const labels = display.map(h => {
-    const d = new Date(h.ts * 1000);
+    const d    = new Date(h.ts * 1000);
     const ageH = (Date.now() / 1000 - h.ts) / 3600;
     return ageH < 48
       ? d.toLocaleTimeString('ru', {hour: '2-digit', minute: '2-digit'})
@@ -1314,8 +1345,8 @@ function renderItemChart(history) {
   const maxP = Math.max(...prices);
   const pad  = (maxP - minP) * 0.1 || maxP * 0.05;
 
-  const ctx = document.getElementById('item-price-chart').getContext('2d');
-  itemPriceChart = new Chart(ctx, {
+  itemPriceChart = new Chart(
+    document.getElementById('item-price-chart').getContext('2d'), {
     type: 'line',
     data: {
       labels,
@@ -1344,9 +1375,7 @@ function renderItemChart(history) {
           borderWidth: 1,
           titleColor: '#6b6b80',
           bodyColor: '#e8e8f0',
-          callbacks: {
-            label: ctx => ' $' + ctx.parsed.y.toFixed(2)
-          }
+          callbacks: { label: c => ' $' + c.parsed.y.toFixed(2) }
         }
       },
       scales: {
@@ -1356,11 +1385,7 @@ function renderItemChart(history) {
         },
         y: {
           grid: { color: 'rgba(255,255,255,0.04)' },
-          ticks: {
-            color: '#6b6b80',
-            font: { size: 10 },
-            callback: v => '$' + v.toFixed(2)
-          },
+          ticks: { color: '#6b6b80', font: { size: 10 }, callback: v => '$' + v.toFixed(2) },
           min: minP - pad,
           max: maxP + pad,
         }
@@ -1374,7 +1399,7 @@ function closeItemModal() {
   if (itemPriceChart) { itemPriceChart.destroy(); itemPriceChart = null; }
 }
 
-// Event delegation for clickable rows
+// Event delegation для кликабельных строк
 document.addEventListener('click', function(e) {
   const tr = e.target.closest('tr.clickable-row');
   if (!tr) return;
@@ -1382,7 +1407,6 @@ document.addEventListener('click', function(e) {
   openItemDetail(tr.dataset.name, parseInt(tr.dataset.appid));
 });
 
-// Close item modal on backdrop click
 document.getElementById('item-modal').addEventListener('click', function(e) {
   if (e.target === this) closeItemModal();
 });

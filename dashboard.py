@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, Response
 import sqlite3
 import json
 import os
@@ -45,6 +45,12 @@ def init_db():
     conn.execute("""
         CREATE TABLE IF NOT EXISTS bot_config (
             key TEXT PRIMARY KEY, value TEXT
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS history_imported (
+            item TEXT PRIMARY KEY,
+            imported_at INTEGER
         )
     """)
     conn.commit()
@@ -278,6 +284,94 @@ def api_parse_url():
         return jsonify({"ok": False, "error": "Не удалось извлечь название предмета"}), 400
 
     return jsonify({"ok": True, "name": name, "appid": appid})
+
+@app.route("/api/steam/image/<path:icon_hash>")
+def api_steam_image(icon_hash):
+    """Проксирует изображение скина со Steam CDN"""
+    try:
+        url = f"https://community.cloudflare.steamstatic.com/economy/image/{icon_hash}/360fx360f"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = resp.read()
+            ctype = resp.headers.get("Content-Type", "image/png")
+        return Response(data, content_type=ctype)
+    except Exception:
+        return Response(status=404)
+
+@app.route("/api/steam/import-history/<path:item_name>", methods=["POST"])
+def api_import_history(item_name):
+    """Импортирует историю цен со страницы Steam Market — только один раз на предмет"""
+    conn = get_db()
+    if conn.execute("SELECT 1 FROM history_imported WHERE item=?", (item_name,)).fetchone():
+        conn.close()
+        return jsonify({"ok": True, "skipped": True})
+
+    appid = request.json.get("appid", 730)
+    try:
+        encoded = urllib.parse.quote(item_name)
+        url = f"https://steamcommunity.com/market/listings/{appid}/{encoded}"
+        req = urllib.request.Request(url, headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept-Language": "en-US,en;q=0.9",
+        })
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            html = resp.read().decode("utf-8", errors="ignore")
+
+        # Извлекаем массив line1 из JS на странице
+        idx = html.find("var line1=")
+        if idx == -1:
+            conn.close()
+            return jsonify({"ok": False, "error": "line1 не найден на странице Steam"})
+
+        start = idx + len("var line1=")
+        depth = 0
+        end = start
+        for i, c in enumerate(html[start:]):
+            if c == "[":
+                depth += 1
+            elif c == "]":
+                depth -= 1
+                if depth == 0:
+                    end = start + i + 1
+                    break
+
+        price_data = json.loads(html[start:end])
+
+        MONTHS = {"Jan":1,"Feb":2,"Mar":3,"Apr":4,"May":5,"Jun":6,
+                  "Jul":7,"Aug":8,"Sep":9,"Oct":10,"Nov":11,"Dec":12}
+        inserted = 0
+        for entry in price_data:
+            try:
+                date_str = entry[0]   # "Dec 09 2021 01: +0"
+                price    = float(entry[1])
+                if price <= 0:
+                    continue
+                m = re.match(r"(\w{3})\s+(\d+)\s+(\d{4})\s+(\d+)", date_str)
+                if not m:
+                    continue
+                month = MONTHS.get(m.group(1))
+                if not month:
+                    continue
+                ts = int(datetime(int(m.group(3)), month, int(m.group(2)), int(m.group(4))).timestamp())
+                conn.execute(
+                    "INSERT OR IGNORE INTO prices VALUES (?,?,?,?,?)",
+                    (item_name, price, 0, 1, ts)
+                )
+                inserted += 1
+            except Exception:
+                continue
+
+        conn.execute(
+            "INSERT OR REPLACE INTO history_imported VALUES (?,?)",
+            (item_name, int(datetime.now().timestamp()))
+        )
+        conn.commit()
+        conn.close()
+        return jsonify({"ok": True, "skipped": False, "inserted": inserted})
+
+    except Exception as e:
+        conn.close()
+        return jsonify({"ok": False, "error": str(e)})
 
 @app.route("/api/steam/item-info/<path:item_name>")
 def api_item_info(item_name):
