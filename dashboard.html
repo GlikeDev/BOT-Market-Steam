@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Steam Price Bot</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #111118;
+  --surface2: #1a1a24;
+  --border: #2a2a3a;
+  --accent: #6c63ff;
+  --accent2: #00d4aa;
+  --danger: #ff4757;
+  --warning: #ffa502;
+  --text: #e8e8f0;
+  --muted: #6b6b80;
+  --green: #2ed573;
+  --red: #ff4757;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Grid background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(108,99,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(108,99,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app { position: relative; z-index: 1; display: flex; min-height: 100vh; }
+
+/* Sidebar */
+.sidebar {
+  width: 220px;
+  min-height: 100vh;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 24px 0;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+}
+.logo {
+  padding: 0 20px 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.logo-title {
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.05em;
+}
+.logo-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--muted);
+  transition: all 0.15s;
+  border-left: 2px solid transparent;
+}
+.nav-item:hover { color: var(--text); background: var(--surface2); }
+.nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(108,99,255,0.08); }
+.nav-icon { font-size: 15px; width: 20px; text-align: center; }
+
+.status-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green);
+  display: inline-block;
+  margin-right: 6px;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; } 50% { opacity: 0.4; }
+}
+.sidebar-footer {
+  margin-top: auto;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* Main */
+.main { margin-left: 220px; flex: 1; padding: 32px; }
+
+.page { display: none; }
+.page.active { display: block; }
+
+/* Header */
+.page-header {
+  margin-bottom: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.page-title {
+  font-family: 'Space Mono', monospace;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+.page-subtitle { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+/* Cards */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  transition: border-color 0.2s;
+}
+.stat-card:hover { border-color: var(--accent); }
+.stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+.stat-value { font-family: 'Space Mono', monospace; font-size: 28px; font-weight: 700; color: var(--text); }
+.stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* Table */
+.table-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.table-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.table-title { font-size: 13px; font-weight: 600; }
+table { width: 100%; border-collapse: collapse; }
+th {
+  text-align: left;
+  padding: 10px 20px;
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--border);
+  font-weight: 500;
+}
+td {
+  padding: 12px 20px;
+  font-size: 13px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,0.02); }
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+}
+.badge-up { background: rgba(46,213,115,0.15); color: var(--green); }
+.badge-down { background: rgba(255,71,87,0.15); color: var(--red); }
+.badge-neutral { background: rgba(107,107,128,0.2); color: var(--muted); }
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+  font-family: 'DM Sans', sans-serif;
+}
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:hover { background: #7c75ff; transform: translateY(-1px); }
+.btn-danger { background: rgba(255,71,87,0.15); color: var(--red); border: 1px solid rgba(255,71,87,0.3); }
+.btn-danger:hover { background: rgba(255,71,87,0.25); }
+.btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+
+/* Form */
+.form-group { margin-bottom: 16px; }
+.form-label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+.form-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  transition: border-color 0.15s;
+}
+.form-input:focus { outline: none; border-color: var(--accent); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* Modal */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  width: 480px;
+  max-width: 90vw;
+}
+.modal-title { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+
+/* Config page */
+.config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.config-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+.config-card-title { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 16px; }
+
+/* Range slider */
+.range-wrap { display: flex; align-items: center; gap: 12px; }
+input[type=range] {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+.range-val {
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  color: var(--accent);
+  min-width: 48px;
+  text-align: right;
+}
+
+/* Sparkline */
+.spark { width: 80px; height: 24px; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 13px;
+  z-index: 200;
+  display: none;
+  animation: slideUp 0.2s ease;
+}
+.toast.show { display: block; }
+.toast.success { border-color: var(--green); color: var(--green); }
+.toast.error { border-color: var(--red); color: var(--red); }
+@keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.empty { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
+.mono { font-family: 'Space Mono', monospace; }
+.text-green { color: var(--green); }
+.text-red { color: var(--red); }
+.text-muted { color: var(--muted); }
+.flex { display: flex; align-items: center; gap: 8px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-title">⬡ STEAM BOT</div>
+    <div class="logo-sub"><span class="status-dot"></span>активен</div>
+  </div>
+  <nav>
+    <div class="nav-item active" onclick="showPage('dashboard')">
+      <span class="nav-icon">◈</span> Обзор
+    </div>
+    <div class="nav-item" onclick="showPage('watchlist')">
+      <span class="nav-icon">◉</span> Watchlist
+    </div>
+    <div class="nav-item" onclick="showPage('users')">
+      <span class="nav-icon">◎</span> Пользователи
+    </div>
+    <div class="nav-item" onclick="showPage('config')">
+      <span class="nav-icon">◌</span> Настройки
+    </div>
+    <div class="nav-item" onclick="showPage('db')">
+      <span class="nav-icon">▦</span> База данных
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    Обновлено: <span id="last-update">—</span>
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+
+  <!-- Dashboard -->
+  <div class="page active" id="page-dashboard">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Обзор</div>
+        <div class="page-subtitle">Состояние бота и статистика</div>
+      </div>
+      <button class="btn btn-ghost" onclick="loadAll()">↻ Обновить</button>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Записей цен</div>
+        <div class="stat-value" id="stat-prices">—</div>
+        <div class="stat-sub">в базе данных</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Скинов в watchlist</div>
+        <div class="stat-value" id="stat-items">—</div>
+        <div class="stat-sub">общий список</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Пользователей</div>
+        <div class="stat-value" id="stat-users">—</div>
+        <div class="stat-sub">добавили инвентарь</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Данных собрано</div>
+        <div class="stat-value" id="stat-days">—</div>
+        <div class="stat-sub">дней истории</div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header">
+        <span class="table-title">Последние цены</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Предмет</th>
+            <th>Цена</th>
+            <th>1 час</th>
+            <th>Объём</th>
+            <th>Обновлено</th>
+          </tr>
+        </thead>
+        <tbody id="dashboard-table">
+          <tr><td colspan="5" class="empty">Загрузка...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Watchlist -->
+  <div class="page" id="page-watchlist">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Watchlist</div>
+        <div class="page-subtitle">Скины для мониторинга</div>
+      </div>
+      <button class="btn btn-primary" onclick="openAddModal()">+ Добавить скин</button>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header">
+        <span class="table-title">Все предметы</span>
+        <span class="text-muted mono" id="wl-count" style="font-size:12px">—</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Название</th>
+            <th>AppID</th>
+            <th>Цена</th>
+            <th>Изм. 1ч</th>
+            <th>Объём</th>
+            <th>Добавлен</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="watchlist-table">
+          <tr><td colspan="7" class="empty">Загрузка...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Users -->
+  <div class="page" id="page-users">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Пользователи</div>
+        <div class="page-subtitle">Добавившие свой инвентарь</div>
+      </div>
+    </div>
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>Chat ID</th>
+            <th>Steam профиль</th>
+            <th>Steam ID</th>
+            <th>Скинов</th>
+            <th>Добавлен</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="users-table">
+          <tr><td colspan="6" class="empty">Загрузка...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Config -->
+  <div class="page" id="page-config">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Настройки</div>
+        <div class="page-subtitle">Параметры мониторинга — применяются без перезапуска</div>
+      </div>
+      <button class="btn btn-primary" onclick="saveConfig()">Сохранить</button>
+    </div>
+
+    <div class="config-grid">
+      <div class="config-card">
+        <div class="config-card-title">Интервал проверки</div>
+        <div class="form-group">
+          <div class="range-wrap">
+            <input type="range" id="cfg-interval" min="60" max="1800" step="60"
+              oninput="document.getElementById('cfg-interval-v').textContent = Math.round(this.value/60) + ' мин'">
+            <span class="range-val" id="cfg-interval-v">5 мин</span>
+          </div>
+        </div>
+        <div class="config-card-title" style="margin-top:20px">Мин. объём продаж</div>
+        <div class="form-group">
+          <div class="range-wrap">
+            <input type="range" id="cfg-volume" min="0" max="100" step="1"
+              oninput="document.getElementById('cfg-volume-v').textContent = this.value">
+            <span class="range-val" id="cfg-volume-v">5</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="config-card">
+        <div class="config-card-title">Алерты роста цены</div>
+        <div class="form-group">
+          <label class="form-label">За 1 час (%)</label>
+          <div class="range-wrap">
+            <input type="range" id="cfg-spike1h" min="5" max="100" step="1"
+              oninput="document.getElementById('cfg-spike1h-v').textContent = '+' + this.value + '%'">
+            <span class="range-val" id="cfg-spike1h-v">+15%</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">За 24 часа (%)</label>
+          <div class="range-wrap">
+            <input type="range" id="cfg-spike24h" min="5" max="200" step="1"
+              oninput="document.getElementById('cfg-spike24h-v').textContent = '+' + this.value + '%'">
+            <span class="range-val" id="cfg-spike24h-v">+30%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="config-card">
+        <div class="config-card-title">Алерты падения цены</div>
+        <div class="form-group">
+          <label class="form-label">За 1 час (%)</label>
+          <div class="range-wrap">
+            <input type="range" id="cfg-drop1h" min="1" max="50" step="1"
+              oninput="document.getElementById('cfg-drop1h-v').textContent = '-' + this.value + '%'">
+            <span class="range-val" id="cfg-drop1h-v">-10%</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">За 24 часа (%)</label>
+          <div class="range-wrap">
+            <input type="range" id="cfg-drop24h" min="1" max="100" step="1"
+              oninput="document.getElementById('cfg-drop24h-v').textContent = '-' + this.value + '%'">
+            <span class="range-val" id="cfg-drop24h-v">-20%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="config-card">
+        <div class="config-card-title">Валюта</div>
+        <div class="form-group">
+          <select class="form-input" id="cfg-currency">
+            <option value="1">USD — Доллар 🇺🇸</option>
+            <option value="5">RUB — Рубль 🇷🇺</option>
+            <option value="18">UAH — Гривна 🇺🇦</option>
+            <option value="37">KZT — Тенге 🇰🇿</option>
+            <option value="23">CNY — Юань 🇨🇳</option>
+          </select>
+        </div>
+        <div class="config-card-title" style="margin-top:8px;font-size:11px;color:var(--muted)">
+          Изменение валюты применится при следующей проверке цен
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DB -->
+  <div class="page" id="page-db">
+    <div class="page-header">
+      <div>
+        <div class="page-title">База данных</div>
+        <div class="page-subtitle">Управление историей цен</div>
+      </div>
+    </div>
+    <div class="config-grid">
+      <div class="config-card">
+        <div class="config-card-title">Очистка старых данных</div>
+        <div class="form-group">
+          <label class="form-label">Удалить записи старше (дней)</label>
+          <div class="range-wrap">
+            <input type="range" id="purge-days" min="7" max="90" value="35" step="1"
+              oninput="document.getElementById('purge-days-v').textContent = this.value + ' дн'">
+            <span class="range-val" id="purge-days-v">35 дн</span>
+          </div>
+        </div>
+        <button class="btn btn-danger" onclick="purgeDB()">Очистить старые данные</button>
+      </div>
+      <div class="config-card">
+        <div class="config-card-title">Статистика</div>
+        <div id="db-stats" style="font-size:13px;line-height:2;color:var(--muted)">Загрузка...</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<!-- Add item modal -->
+<div class="modal-overlay" id="add-modal">
+  <div class="modal" style="width:520px">
+    <div class="modal-title">Добавить скин в watchlist</div>
+
+    <!-- Tabs -->
+    <div style="display:flex;gap:0;margin-bottom:20px;border:1px solid var(--border);border-radius:8px;overflow:hidden">
+      <button id="tab-url" onclick="switchTab('url')"
+        style="flex:1;padding:8px;font-size:12px;font-weight:600;border:none;cursor:pointer;transition:all .15s;background:var(--accent);color:#fff;font-family:'DM Sans',sans-serif">
+        По ссылке Steam
+      </button>
+      <button id="tab-search" onclick="switchTab('search')"
+        style="flex:1;padding:8px;font-size:12px;font-weight:600;border:none;cursor:pointer;transition:all .15s;background:var(--surface2);color:var(--muted);font-family:'DM Sans',sans-serif">
+        По названию
+      </button>
+    </div>
+
+    <!-- URL tab -->
+    <div id="panel-url">
+      <div class="form-group">
+        <label class="form-label">Ссылка на предмет</label>
+        <input class="form-input" id="add-url"
+          placeholder="steamcommunity.com/market/listings/730/AK-47%20%7C%20Redline"
+          oninput="onUrlInput()">
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">
+          Вставь ссылку из браузера — название определится автоматически
+        </div>
+      </div>
+
+      <!-- Preview -->
+      <div id="url-preview" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:16px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Найден предмет:</div>
+        <div id="url-preview-name" style="font-size:14px;font-weight:600;color:var(--text)"></div>
+        <div id="url-preview-appid" style="font-size:11px;color:var(--muted);margin-top:2px"></div>
+      </div>
+
+      <!-- Error -->
+      <div id="url-error" style="display:none;background:rgba(255,71,87,0.1);border:1px solid rgba(255,71,87,0.3);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--red)"></div>
+
+      <div class="flex" style="justify-content:flex-end;gap:10px">
+        <button class="btn btn-ghost" onclick="closeModal()">Отмена</button>
+        <button class="btn btn-primary" id="btn-add-url" onclick="addItemFromUrl()" disabled
+          style="opacity:0.4;cursor:not-allowed">Добавить</button>
+      </div>
+    </div>
+
+    <!-- Search tab -->
+    <div id="panel-search" style="display:none">
+      <div class="form-group" style="position:relative">
+        <label class="form-label">Название предмета</label>
+        <input class="form-input" id="add-search"
+          placeholder="Начни вводить название..."
+          oninput="onSearchInput(this.value)"
+          autocomplete="off">
+
+        <!-- Dropdown -->
+        <div id="search-dropdown" style="
+          display:none;
+          position:absolute;
+          top:100%;left:0;right:0;
+          background:var(--surface);
+          border:1px solid var(--border);
+          border-radius:0 0 8px 8px;
+          max-height:260px;
+          overflow-y:auto;
+          z-index:10;
+          margin-top:-1px;
+        "></div>
+      </div>
+
+      <!-- Selected -->
+      <div id="search-selected" style="display:none;background:var(--surface2);border:1px solid var(--accent);border-radius:8px;padding:12px 14px;margin-bottom:16px">
+        <div style="font-size:11px;color:var(--accent);margin-bottom:4px">Выбран:</div>
+        <div id="search-selected-name" style="font-size:14px;font-weight:600;color:var(--text)"></div>
+      </div>
+
+      <div id="search-hint" style="font-size:12px;color:var(--muted);margin-bottom:16px">
+        Введи минимум 2 символа для поиска
+      </div>
+
+      <div class="flex" style="justify-content:flex-end;gap:10px">
+        <button class="btn btn-ghost" onclick="closeModal()">Отмена</button>
+        <button class="btn btn-primary" id="btn-add-search" onclick="addItemFromSearch()" disabled
+          style="opacity:0.4;cursor:not-allowed">Добавить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '';
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (name === 'watchlist') loadWatchlist();
+  if (name === 'users') loadUsers();
+  if (name === 'config') loadConfig();
+  if (name === 'db') loadDBStats();
+}
+
+function toast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 2500);
+}
+
+function fmt(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts * 1000);
+  const now = new Date();
+  const diff = Math.floor((now - d) / 60000);
+  if (diff < 1) return 'только что';
+  if (diff < 60) return diff + ' мин назад';
+  if (diff < 1440) return Math.floor(diff/60) + 'ч назад';
+  return d.toLocaleDateString('ru');
+}
+
+function pctBadge(pct) {
+  if (pct === null || pct === undefined) return '<span class="badge badge-neutral">—</span>';
+  const cls = pct > 0 ? 'badge-up' : pct < 0 ? 'badge-down' : 'badge-neutral';
+  const sign = pct > 0 ? '+' : '';
+  return `<span class="badge ${cls}">${sign}${pct.toFixed(1)}%</span>`;
+}
+
+async function loadAll() {
+  document.getElementById('last-update').textContent = new Date().toLocaleTimeString('ru');
+  const stats = await fetch('/api/stats').then(r => r.json());
+  document.getElementById('stat-prices').textContent = stats.total_prices.toLocaleString();
+  document.getElementById('stat-items').textContent  = stats.total_items;
+  document.getElementById('stat-users').textContent  = stats.total_users;
+  document.getElementById('stat-days').textContent   = stats.db_age_days;
+
+  const wl = await fetch('/api/watchlist').then(r => r.json());
+  const tbody = document.getElementById('dashboard-table');
+  if (!wl.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">Нет данных</td></tr>';
+    return;
+  }
+  tbody.innerHTML = wl.map(item => `
+    <tr>
+      <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${item.name}">${item.name}</td>
+      <td class="mono">${item.price ? '$' + item.price.toFixed(2) : '—'}</td>
+      <td>${pctBadge(item.pct_1h)}</td>
+      <td class="text-muted">${item.volume ?? '—'}</td>
+      <td class="text-muted">${fmt(item.last_seen)}</td>
+    </tr>
+  `).join('');
+}
+
+async function loadWatchlist() {
+  const wl = await fetch('/api/watchlist').then(r => r.json());
+  document.getElementById('wl-count').textContent = wl.length + ' предметов';
+  const tbody = document.getElementById('watchlist-table');
+  if (!wl.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">Список пуст. Добавьте предметы.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = wl.map(item => `
+    <tr>
+      <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${item.name}">${item.name}</td>
+      <td class="mono text-muted">${item.appid}</td>
+      <td class="mono">${item.price ? '$' + item.price.toFixed(2) : '—'}</td>
+      <td>${pctBadge(item.pct_1h)}</td>
+      <td class="text-muted">${item.volume ?? '—'}</td>
+      <td class="text-muted">${fmt(item.added_at)}</td>
+      <td>
+        <button class="btn btn-danger btn-sm" onclick="deleteItem('${item.name.replace(/'/g,"\\'")}')">✕</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function loadUsers() {
+  const users = await fetch('/api/users').then(r => r.json());
+  const tbody = document.getElementById('users-table');
+  if (!users.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">Нет пользователей</td></tr>';
+    return;
+  }
+  tbody.innerHTML = users.map(u => `
+    <tr>
+      <td class="mono">${u.chat_id}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+        <a href="${u.steam_url}" target="_blank" style="color:var(--accent);text-decoration:none">${u.steam_url || '—'}</a>
+      </td>
+      <td class="mono text-muted" style="font-size:11px">${u.steam_id || '—'}</td>
+      <td class="mono">${u.items}</td>
+      <td class="text-muted">${fmt(u.added_at)}</td>
+      <td>
+        <button class="btn btn-danger btn-sm" onclick="deleteUser('${u.chat_id}')">✕</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function loadConfig() {
+  const cfg = await fetch('/api/config').then(r => r.json());
+  const s = v => document.getElementById(v);
+  s('cfg-interval').value = cfg.check_interval;
+  s('cfg-interval-v').textContent = Math.round(cfg.check_interval/60) + ' мин';
+  s('cfg-spike1h').value = cfg.spike_1h;
+  s('cfg-spike1h-v').textContent = '+' + cfg.spike_1h + '%';
+  s('cfg-spike24h').value = cfg.spike_24h;
+  s('cfg-spike24h-v').textContent = '+' + cfg.spike_24h + '%';
+  s('cfg-drop1h').value = Math.abs(cfg.drop_1h);
+  s('cfg-drop1h-v').textContent = '-' + Math.abs(cfg.drop_1h) + '%';
+  s('cfg-drop24h').value = Math.abs(cfg.drop_24h);
+  s('cfg-drop24h-v').textContent = '-' + Math.abs(cfg.drop_24h) + '%';
+  s('cfg-volume').value = cfg.min_volume;
+  s('cfg-volume-v').textContent = cfg.min_volume;
+  s('cfg-currency').value = cfg.currency;
+}
+
+async function saveConfig() {
+  const g = id => document.getElementById(id).value;
+  const body = {
+    check_interval: parseInt(g('cfg-interval')),
+    spike_1h:       parseFloat(g('cfg-spike1h')),
+    spike_24h:      parseFloat(g('cfg-spike24h')),
+    drop_1h:        -Math.abs(parseFloat(g('cfg-drop1h'))),
+    drop_24h:       -Math.abs(parseFloat(g('cfg-drop24h'))),
+    min_volume:     parseInt(g('cfg-volume')),
+    currency:       parseInt(g('cfg-currency')),
+  };
+  const r = await fetch('/api/config', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  }).then(r => r.json());
+  if (r.ok) toast('Настройки сохранены');
+  else toast('Ошибка', 'error');
+}
+
+async function loadDBStats() {
+  const stats = await fetch('/api/stats').then(r => r.json());
+  document.getElementById('db-stats').innerHTML = `
+    Записей цен: <span style="color:var(--text)">${stats.total_prices.toLocaleString()}</span><br>
+    Предметов: <span style="color:var(--text)">${stats.total_items}</span><br>
+    Пользователей: <span style="color:var(--text)">${stats.total_users}</span><br>
+    Скинов пользователей: <span style="color:var(--text)">${stats.user_items}</span><br>
+    Возраст БД: <span style="color:var(--text)">${stats.db_age_days} дн</span>
+  `;
+}
+
+async function purgeDB() {
+  const days = document.getElementById('purge-days').value;
+  if (!confirm(`Удалить данные старше ${days} дней?`)) return;
+  const r = await fetch('/api/db/purge', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({days: parseInt(days)})
+  }).then(r => r.json());
+  toast(`Удалено ${r.deleted} записей`);
+  loadDBStats();
+}
+
+function openAddModal() {
+  document.getElementById('add-modal').classList.add('open');
+  resetModal();
+  setTimeout(() => document.getElementById('add-url').focus(), 50);
+}
+
+function closeModal() {
+  document.getElementById('add-modal').classList.remove('open');
+  resetModal();
+}
+
+function resetModal() {
+  document.getElementById('add-url').value = '';
+  document.getElementById('add-search').value = '';
+  document.getElementById('url-preview').style.display = 'none';
+  document.getElementById('url-error').style.display = 'none';
+  document.getElementById('search-selected').style.display = 'none';
+  document.getElementById('search-dropdown').style.display = 'none';
+  document.getElementById('search-hint').style.display = 'block';
+  setAddUrlBtn(false);
+  setAddSearchBtn(false);
+  selectedSearchItem = null;
+}
+
+function switchTab(tab) {
+  const isUrl = tab === 'url';
+  document.getElementById('panel-url').style.display    = isUrl ? 'block' : 'none';
+  document.getElementById('panel-search').style.display = isUrl ? 'none'  : 'block';
+  document.getElementById('tab-url').style.background    = isUrl ? 'var(--accent)' : 'var(--surface2)';
+  document.getElementById('tab-url').style.color         = isUrl ? '#fff' : 'var(--muted)';
+  document.getElementById('tab-search').style.background = isUrl ? 'var(--surface2)' : 'var(--accent)';
+  document.getElementById('tab-search').style.color      = isUrl ? 'var(--muted)' : '#fff';
+  if (tab === 'url') document.getElementById('add-url').focus();
+  else document.getElementById('add-search').focus();
+}
+
+function setAddUrlBtn(enabled) {
+  const btn = document.getElementById('btn-add-url');
+  btn.disabled = !enabled;
+  btn.style.opacity = enabled ? '1' : '0.4';
+  btn.style.cursor  = enabled ? 'pointer' : 'not-allowed';
+}
+
+function setAddSearchBtn(enabled) {
+  const btn = document.getElementById('btn-add-search');
+  btn.disabled = !enabled;
+  btn.style.opacity = enabled ? '1' : '0.4';
+  btn.style.cursor  = enabled ? 'pointer' : 'not-allowed';
+}
+
+// --- URL tab ---
+let urlDebounce = null;
+let parsedUrlItem = null;
+
+function onUrlInput() {
+  const val = document.getElementById('add-url').value.trim();
+  document.getElementById('url-preview').style.display = 'none';
+  document.getElementById('url-error').style.display   = 'none';
+  setAddUrlBtn(false);
+  parsedUrlItem = null;
+  clearTimeout(urlDebounce);
+  if (!val) return;
+  urlDebounce = setTimeout(() => parseUrl(val), 400);
+}
+
+async function parseUrl(val) {
+  try {
+    const r = await fetch('/api/steam/parse-url', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({url: val})
+    }).then(r => r.json());
+
+    if (r.ok) {
+      parsedUrlItem = {name: r.name, appid: r.appid};
+      document.getElementById('url-preview-name').textContent  = r.name;
+      document.getElementById('url-preview-appid').textContent = `AppID: ${r.appid}`;
+      document.getElementById('url-preview').style.display = 'block';
+      document.getElementById('url-error').style.display   = 'none';
+      setAddUrlBtn(true);
+    } else {
+      document.getElementById('url-error').textContent     = r.error;
+      document.getElementById('url-error').style.display   = 'block';
+      document.getElementById('url-preview').style.display = 'none';
+      setAddUrlBtn(false);
+    }
+  } catch(e) {
+    document.getElementById('url-error').textContent   = 'Ошибка соединения';
+    document.getElementById('url-error').style.display = 'block';
+  }
+}
+
+async function addItemFromUrl() {
+  if (!parsedUrlItem) return;
+  await doAddItem(parsedUrlItem.name, parsedUrlItem.appid);
+}
+
+// --- Search tab ---
+let searchDebounce = null;
+let selectedSearchItem = null;
+
+function onSearchInput(val) {
+  clearTimeout(searchDebounce);
+  document.getElementById('search-selected').style.display  = 'none';
+  document.getElementById('search-dropdown').style.display  = 'none';
+  setAddSearchBtn(false);
+  selectedSearchItem = null;
+
+  if (val.length < 2) {
+    document.getElementById('search-hint').style.display = 'block';
+    return;
+  }
+  document.getElementById('search-hint').style.display = 'none';
+  document.getElementById('search-dropdown').innerHTML  =
+    '<div style="padding:12px 14px;font-size:12px;color:var(--muted)">Ищу...</div>';
+  document.getElementById('search-dropdown').style.display = 'block';
+
+  searchDebounce = setTimeout(() => doSearch(val), 450);
+}
+
+async function doSearch(q) {
+  try {
+    const results = await fetch(`/api/steam/search?q=${encodeURIComponent(q)}&appid=730`)
+      .then(r => r.json());
+    const dd = document.getElementById('search-dropdown');
+    if (!results.length) {
+      dd.innerHTML = '<div style="padding:12px 14px;font-size:12px;color:var(--muted)">Ничего не найдено</div>';
+      return;
+    }
+    dd.innerHTML = results.map((item, i) => `
+      <div onclick="selectSearchItem(${i})"
+        data-name="${item.name.replace(/"/g,'&quot;')}"
+        data-appid="${item.appid}"
+        style="padding:10px 14px;font-size:13px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.04);transition:background .1s"
+        onmouseover="this.style.background='var(--surface2)'"
+        onmouseout="this.style.background=''"
+      >
+        <div style="font-weight:500;color:var(--text)">${item.name}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">AppID: ${item.appid}</div>
+      </div>
+    `).join('');
+    dd.style.display = 'block';
+  } catch(e) {
+    document.getElementById('search-dropdown').innerHTML =
+      '<div style="padding:12px 14px;font-size:12px;color:var(--red)">Ошибка поиска</div>';
+  }
+}
+
+function selectSearchItem(index) {
+  const rows = document.querySelectorAll('#search-dropdown > div');
+  const row  = rows[index];
+  const name  = row.dataset.name;
+  const appid = parseInt(row.dataset.appid);
+  selectedSearchItem = {name, appid};
+  document.getElementById('search-selected-name').textContent = name;
+  document.getElementById('search-selected').style.display    = 'block';
+  document.getElementById('search-dropdown').style.display    = 'none';
+  document.getElementById('add-search').value = name;
+  setAddSearchBtn(true);
+}
+
+async function addItemFromSearch() {
+  if (!selectedSearchItem) return;
+  await doAddItem(selectedSearchItem.name, selectedSearchItem.appid);
+}
+
+// --- Общая логика добавления ---
+async function doAddItem(name, appid) {
+  const r = await fetch('/api/watchlist', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({name, appid})
+  }).then(r => r.json());
+  if (r.ok) {
+    closeModal();
+    toast('Добавлено: ' + name);
+    loadWatchlist();
+  } else {
+    toast(r.error || 'Ошибка', 'error');
+  }
+}
+
+async function addItem() { /* legacy — не используется */ }
+
+async function deleteItem(name) {
+  if (!confirm('Удалить из watchlist?\n' + name)) return;
+  await fetch('/api/watchlist/' + encodeURIComponent(name), {method: 'DELETE'});
+  toast('Удалено');
+  loadWatchlist();
+}
+
+async function deleteUser(chatId) {
+  if (!confirm('Удалить пользователя и все его скины?')) return;
+  await fetch('/api/users/' + chatId, {method: 'DELETE'});
+  toast('Пользователь удалён');
+  loadUsers();
+}
+
+// Закрыть модалку по клику на фон
+document.getElementById('add-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// Enter в поле URL
+document.getElementById('add-url').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && parsedUrlItem) addItemFromUrl();
+});
+
+// Enter в поле поиска — выбираем первый результат из дропдауна
+document.getElementById('add-search').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const first = document.querySelector('#search-dropdown > div[data-name]');
+    if (first) selectSearchItem(0);
+    else if (selectedSearchItem) addItemFromSearch();
+  }
+  if (e.key === 'Escape') {
+    document.getElementById('search-dropdown').style.display = 'none';
+  }
+});
+
+// Автообновление каждые 30 сек
+loadAll();
+setInterval(loadAll, 30000);
+</script>
+</body>
+</html>
