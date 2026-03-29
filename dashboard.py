@@ -235,21 +235,24 @@ def api_user_delete(chat_id):
 @app.route("/api/prices/<path:item_name>")
 def api_prices(item_name):
     conn = get_db()
-    days = request.args.get("days", 30, type=int)
+    days     = request.args.get("days", 30, type=int)
+    currency = request.args.get("currency", None, type=int)
+    if currency is None:
+        currency = int(get_config("CURRENCY", 1))
     if days > 0:
         cutoff = int((datetime.now() - timedelta(days=days)).timestamp())
         rows = conn.execute(
             """SELECT price, volume, timestamp FROM prices
-               WHERE item=? AND timestamp >= ?
+               WHERE item=? AND currency=? AND timestamp >= ?
                ORDER BY timestamp ASC""",
-            (item_name, cutoff)
+            (item_name, currency, cutoff)
         ).fetchall()
     else:
         rows = conn.execute(
             """SELECT price, volume, timestamp FROM prices
-               WHERE item=?
+               WHERE item=? AND currency=?
                ORDER BY timestamp ASC""",
-            (item_name,)
+            (item_name, currency)
         ).fetchall()
     conn.close()
     return jsonify([{

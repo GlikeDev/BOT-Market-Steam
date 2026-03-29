@@ -8,6 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hammerjs@2/hammer.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2/dist/chartjs-plugin-zoom.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <style>
 :root {
   --bg: #0a0a0f;
@@ -411,6 +412,8 @@ input[type=range]::-webkit-slider-thumb {
 }
 tr.clickable-row { cursor: pointer; }
 tr.clickable-row:hover td { background: rgba(108,99,255,0.06) !important; }
+.item-chart-wrap canvas { cursor: grab; }
+.item-chart-wrap canvas:active { cursor: grabbing; }
 .chart-range-wrap {
   display: flex;
   gap: 6px;
@@ -870,6 +873,21 @@ tr.clickable-row:hover td { background: rgba(108,99,255,0.06) !important; }
 <script>
 const API = '';
 
+// Валюта — символ и позиция
+const CURRENCY_SYM  = {1:'$', 5:'₽', 18:'₴', 37:'₸', 23:'¥'};
+const CURRENCY_POST = new Set([5, 18, 37]); // символ после числа
+let currentCurrencyCode = 1;
+
+function currFmt(v) {
+  const sym  = CURRENCY_SYM[currentCurrencyCode] || '$';
+  const abs  = Math.abs(v);
+  const num  = abs >= 10000 ? Math.round(v).toLocaleString('ru')
+             : abs >= 100   ? Math.round(v)
+             : abs >= 10    ? v.toFixed(1).replace(/\.0$/, '')
+             : v.toFixed(2);
+  return CURRENCY_POST.has(currentCurrencyCode) ? num + '\u00a0' + sym : sym + num;
+}
+
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -908,7 +926,12 @@ function pctBadge(pct) {
 
 async function loadAll() {
   document.getElementById('last-update').textContent = new Date().toLocaleTimeString('ru');
-  const stats = await fetch('/api/stats').then(r => r.json());
+  const [stats, cfg] = await Promise.all([
+    fetch('/api/stats').then(r => r.json()),
+    fetch('/api/config').then(r => r.json()),
+  ]);
+  currentCurrencyCode = cfg.currency ?? 1;
+
   document.getElementById('stat-prices').textContent = stats.total_prices.toLocaleString();
   document.getElementById('stat-items').textContent  = stats.total_items;
   document.getElementById('stat-users').textContent  = stats.total_users;
@@ -923,7 +946,7 @@ async function loadAll() {
   tbody.innerHTML = wl.map(item => `
     <tr class="clickable-row" data-name="${item.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" data-appid="${item.appid}">
       <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${item.name}">${item.name}</td>
-      <td class="mono">${item.price ? '$' + item.price.toFixed(2) : '—'}</td>
+      <td class="mono">${item.price ? currFmt(item.price) : '—'}</td>
       <td>${pctBadge(item.pct_1h)}</td>
       <td class="text-muted">${item.volume ?? '—'}</td>
       <td class="text-muted">${fmt(item.last_seen)}</td>
@@ -1283,13 +1306,13 @@ function showItemStats(history) {
   const latest = history[history.length - 1];
   const now    = Date.now() / 1000;
 
-  document.getElementById('istat-price').textContent  = '$' + latest.price.toFixed(2);
+  document.getElementById('istat-price').textContent  = currFmt(latest.price);
   document.getElementById('istat-price').style.color  = 'var(--text)';
   document.getElementById('istat-volume').textContent = latest.volume ?? '—';
   document.getElementById('istat-volume').style.color = 'var(--text)';
-  document.getElementById('istat-min').textContent    = '$' + Math.min(...prices).toFixed(2);
+  document.getElementById('istat-min').textContent    = currFmt(Math.min(...prices));
   document.getElementById('istat-min').style.color    = 'var(--text)';
-  document.getElementById('istat-max').textContent    = '$' + Math.max(...prices).toFixed(2);
+  document.getElementById('istat-max').textContent    = currFmt(Math.max(...prices));
   document.getElementById('istat-max').style.color    = 'var(--text)';
   setStatPct('istat-1h',  latest.price, findLastBefore(history, now - 3600));
   setStatPct('istat-24h', latest.price, findLastBefore(history, now - 86400));
@@ -1357,7 +1380,7 @@ async function openItemDetail(name, appid) {
 
   // Грузим всю историю из БД и картинку параллельно
   const [history] = await Promise.all([
-    fetch(`/api/prices/${encoded}?days=0`).then(r => r.json()).catch(() => []),
+    fetch(`/api/prices/${encoded}?days=0&currency=${currentCurrencyCode}`).then(r => r.json()).catch(() => []),
 
     // Картинка через наш прокси (Steam CDN напрямую из браузера не грузится)
     fetch(`/api/steam/item-info/${encoded}`)
@@ -1396,7 +1419,7 @@ async function openItemDetail(name, appid) {
     .then(async result => {
       if (result.ok && !result.skipped && result.inserted > 0) {
         // Появились новые данные — обновляем график
-        const fresh = await fetch(`/api/prices/${encoded}?days=0`)
+        const fresh = await fetch(`/api/prices/${encoded}?days=0&currency=${currentCurrencyCode}`)
           .then(r => r.json()).catch(() => []);
         if (fresh.length) showItemStats(fresh);
       } else if (!result.ok && !history.length) {
@@ -1419,44 +1442,55 @@ function niceStep(minP, maxP) {
   return Math.max(step, 0.01);
 }
 
-function fmtPrice(v) {
-  if (Math.abs(v) >= 1000) return '$' + Math.round(v).toLocaleString();
-  if (Math.abs(v) >= 10)   return '$' + Math.round(v);
-  if (Math.abs(v) >= 1)    return '$' + v.toFixed(1).replace(/\.0$/, '');
-  return '$' + v.toFixed(2);
+// fmtPrice теперь алиас currFmt (используется как callback Chart.js)
+function fmtPrice(v) { return currFmt(v); }
+
+// Пересчёт диапазона Y по видимым данным после зума/пана
+function rescaleY(chart) {
+  const xMin = chart.scales.x.min;
+  const xMax = chart.scales.x.max;
+  const pts   = chart.data.datasets[0].data;
+  let lo = Infinity, hi = -Infinity;
+  for (const p of pts) {
+    if (p.x >= xMin && p.x <= xMax) {
+      if (p.y < lo) lo = p.y;
+      if (p.y > hi) hi = p.y;
+    }
+  }
+  if (!isFinite(lo)) return;
+  const step = niceStep(lo, hi);
+  const pad  = step * 1.5;
+  chart.options.scales.y.min = Math.floor((lo - pad) / step) * step;
+  chart.options.scales.y.max = Math.ceil((hi  + pad) / step) * step;
+  chart.options.scales.y.ticks.stepSize = step;
+  chart.update('none');
 }
 
 function renderItemChart(history) {
   if (itemPriceChart) { itemPriceChart.destroy(); itemPriceChart = null; }
 
   const display = downsample(history, 600);
-  const prices  = display.map(h => h.price);
-  const trend   = prices[prices.length - 1] >= prices[0];
+  const trend   = display[display.length - 1].price >= display[0].price;
   const lineColor = trend ? '#2ed573' : '#ff4757';
   const fillColor = trend ? 'rgba(46,213,115,0.08)' : 'rgba(255,71,87,0.08)';
 
-  const labels = display.map(h => {
-    const d    = new Date(h.ts * 1000);
-    const ageH = (Date.now() / 1000 - h.ts) / 3600;
-    return ageH < 48
-      ? d.toLocaleTimeString('ru', {hour: '2-digit', minute: '2-digit'})
-      : d.toLocaleDateString('ru', {month: 'short', day: 'numeric'});
-  });
+  // Данные в формате {x: ms, y: price} для time scale
+  const chartData = display.map(h => ({ x: h.ts * 1000, y: h.price }));
 
-  const minP = Math.min(...prices);
-  const maxP = Math.max(...prices);
-  const step = niceStep(minP, maxP);
-  const pad  = step * 2;
-  const yMin = Math.floor((minP - pad) / step) * step;
-  const yMax = Math.ceil((maxP  + pad) / step) * step;
+  const prices = display.map(h => h.price);
+  const minP   = Math.min(...prices);
+  const maxP   = Math.max(...prices);
+  const step   = niceStep(minP, maxP);
+  const pad    = step * 2;
+  const yMin   = Math.floor((minP - pad) / step) * step;
+  const yMax   = Math.ceil((maxP  + pad) / step) * step;
 
   const canvas = document.getElementById('item-price-chart');
   itemPriceChart = new Chart(canvas.getContext('2d'), {
     type: 'line',
     data: {
-      labels,
       datasets: [{
-        data: prices,
+        data: chartData,
         borderColor: lineColor,
         borderWidth: 2,
         backgroundColor: fillColor,
@@ -1480,37 +1514,46 @@ function renderItemChart(history) {
           borderWidth: 1,
           titleColor: '#6b6b80',
           bodyColor: '#e8e8f0',
-          callbacks: { label: c => ' ' + fmtPrice(c.parsed.y) }
+          callbacks: { label: c => ' ' + currFmt(c.parsed.y) }
         },
         zoom: {
           pan: {
             enabled: true,
             mode: 'x',
-            threshold: 5,
+            threshold: 3,
+            onPanComplete: ({chart}) => rescaleY(chart),
           },
           zoom: {
-            wheel: { enabled: true, speed: 0.1 },
+            wheel: { enabled: true, speed: 0.08 },
             pinch: { enabled: true },
             mode: 'x',
+            onZoomComplete: ({chart}) => rescaleY(chart),
           },
-          limits: {
-            x: { min: 'original', max: 'original' },
-          }
+          limits: { x: { min: 'original', max: 'original' } },
         }
       },
       scales: {
         x: {
+          type: 'time',
+          time: {
+            displayFormats: {
+              millisecond: 'HH:mm:ss',
+              second:      'HH:mm:ss',
+              minute:      'HH:mm',
+              hour:        'HH:mm',
+              day:         'd MMM',
+              week:        'd MMM',
+              month:       'MMM yyyy',
+              quarter:     'MMM yyyy',
+              year:        'yyyy',
+            }
+          },
           grid: { color: 'rgba(255,255,255,0.04)' },
           ticks: { color: '#6b6b80', font: { size: 10 }, maxTicksLimit: 8 }
         },
         y: {
           grid: { color: 'rgba(255,255,255,0.04)' },
-          ticks: {
-            color: '#6b6b80',
-            font: { size: 10 },
-            stepSize: step,
-            callback: fmtPrice,
-          },
+          ticks: { color: '#6b6b80', font: { size: 10 }, stepSize: step, callback: fmtPrice },
           min: yMin,
           max: yMax,
         }
@@ -1518,7 +1561,6 @@ function renderItemChart(history) {
     }
   });
 
-  // Двойной клик — сброс зума
   canvas.ondblclick = () => { if (itemPriceChart) itemPriceChart.resetZoom(); };
 }
 
