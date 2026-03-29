@@ -279,6 +279,33 @@ def api_parse_url():
 
     return jsonify({"ok": True, "name": name, "appid": appid})
 
+@app.route("/api/steam/item-info/<path:item_name>")
+def api_item_info(item_name):
+    """Получает icon_url предмета через Steam Market Search"""
+    try:
+        params = urllib.parse.urlencode({
+            "query": item_name, "start": 0, "count": 5,
+            "search_descriptions": 0, "appid": 730, "norender": 1,
+        })
+        url = f"https://steamcommunity.com/market/search/render/?{params}"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data = json.loads(resp.read())
+        for item in data.get("results", []):
+            name = item.get("name") or item.get("hash_name", "")
+            if name == item_name:
+                icon = item.get("asset_description", {}).get("icon_url", "")
+                if icon:
+                    return jsonify({"ok": True, "icon_url": icon})
+        results = data.get("results", [])
+        if results:
+            icon = results[0].get("asset_description", {}).get("icon_url", "")
+            if icon:
+                return jsonify({"ok": True, "icon_url": icon})
+    except Exception:
+        pass
+    return jsonify({"ok": False})
+
 @app.route("/api/steam/search")
 def api_steam_search():
     """Поиск предметов через Steam Market Search API"""

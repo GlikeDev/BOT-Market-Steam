@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Steam Price Bot</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <style>
 :root {
   --bg: #0a0a0f;
@@ -312,6 +313,100 @@ input[type=range]::-webkit-slider-thumb {
 .text-red { color: var(--red); }
 .text-muted { color: var(--muted); }
 .flex { display: flex; align-items: center; gap: 8px; }
+
+/* Item detail modal */
+.item-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  width: min(740px, 94vw);
+  max-height: 92vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.item-modal-header {
+  display: flex;
+  gap: 20px;
+  padding: 24px 24px 20px;
+  border-bottom: 1px solid var(--border);
+  align-items: flex-start;
+}
+.item-skin-img {
+  width: 180px;
+  height: 135px;
+  object-fit: contain;
+  border-radius: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+  display: block;
+}
+.item-skin-placeholder {
+  width: 180px;
+  height: 135px;
+  border-radius: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  flex-shrink: 0;
+  color: var(--muted);
+}
+.item-modal-info { flex: 1; min-width: 0; }
+.item-modal-name {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+.item-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.item-stat {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.item-stat-label {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 4px;
+}
+.item-stat-value {
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+.item-chart-section {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.item-chart-title {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 14px;
+}
+.item-chart-wrap { position: relative; height: 200px; }
+.item-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+}
+tr.clickable-row { cursor: pointer; }
+tr.clickable-row:hover td { background: rgba(108,99,255,0.06) !important; }
 </style>
 </head>
 <body>
@@ -582,6 +677,63 @@ input[type=range]::-webkit-slider-thumb {
 </main>
 </div>
 
+<!-- Item detail modal -->
+<div class="modal-overlay" id="item-modal">
+  <div class="item-modal">
+    <div class="item-modal-header">
+      <div id="item-img-wrap">
+        <div class="item-skin-placeholder" id="item-img-placeholder">⏳</div>
+      </div>
+      <div class="item-modal-info">
+        <div class="item-modal-name" id="item-modal-name">—</div>
+        <div class="item-stats-grid">
+          <div class="item-stat">
+            <div class="item-stat-label">Цена</div>
+            <div class="item-stat-value" id="istat-price">—</div>
+          </div>
+          <div class="item-stat">
+            <div class="item-stat-label">За 1 час</div>
+            <div class="item-stat-value" id="istat-1h">—</div>
+          </div>
+          <div class="item-stat">
+            <div class="item-stat-label">За 24 часа</div>
+            <div class="item-stat-value" id="istat-24h">—</div>
+          </div>
+          <div class="item-stat">
+            <div class="item-stat-label">Объём</div>
+            <div class="item-stat-value" id="istat-volume">—</div>
+          </div>
+          <div class="item-stat">
+            <div class="item-stat-label">Мин (30д)</div>
+            <div class="item-stat-value" id="istat-min">—</div>
+          </div>
+          <div class="item-stat">
+            <div class="item-stat-label">Макс (30д)</div>
+            <div class="item-stat-value" id="istat-max">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="item-chart-section">
+      <div class="item-chart-title">История цен — последние 30 дней</div>
+      <div class="item-chart-wrap" id="item-chart-wrap">
+        <canvas id="item-price-chart"></canvas>
+      </div>
+      <div id="item-chart-empty" style="display:none;text-align:center;padding:36px;color:var(--muted);font-size:13px">
+        Бот ещё не накопил достаточно данных для графика
+      </div>
+    </div>
+
+    <div class="item-modal-footer">
+      <a id="item-steam-link" href="#" target="_blank" class="btn btn-ghost" style="text-decoration:none">
+        ↗ Открыть на Steam Market
+      </a>
+      <button class="btn btn-ghost" onclick="closeItemModal()">Закрыть</button>
+    </div>
+  </div>
+</div>
+
 <!-- Add item modal -->
 <div class="modal-overlay" id="add-modal">
   <div class="modal" style="width:520px">
@@ -728,7 +880,7 @@ async function loadAll() {
     return;
   }
   tbody.innerHTML = wl.map(item => `
-    <tr>
+    <tr class="clickable-row" data-name="${item.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" data-appid="${item.appid}">
       <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${item.name}">${item.name}</td>
       <td class="mono">${item.price ? '$' + item.price.toFixed(2) : '—'}</td>
       <td>${pctBadge(item.pct_1h)}</td>
@@ -747,7 +899,7 @@ async function loadWatchlist() {
     return;
   }
   tbody.innerHTML = wl.map(item => `
-    <tr>
+    <tr class="clickable-row" data-name="${item.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" data-appid="${item.appid}">
       <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${item.name}">${item.name}</td>
       <td class="mono text-muted">${item.appid}</td>
       <td class="mono">${item.price ? '$' + item.price.toFixed(2) : '—'}</td>
@@ -1042,6 +1194,198 @@ async function deleteUser(chatId) {
   toast('Пользователь удалён');
   loadUsers();
 }
+
+// --- Item detail modal ---
+let itemPriceChart = null;
+
+function findLastBefore(arr, ts) {
+  for (let i = arr.length - 1; i >= 0; i--) {
+    if (arr[i].ts <= ts) return arr[i];
+  }
+  return null;
+}
+
+function downsample(arr, max) {
+  if (arr.length <= max) return arr;
+  const step = arr.length / max;
+  const result = [];
+  for (let i = 0; i < max; i++) {
+    result.push(arr[Math.round(i * step)]);
+  }
+  result[result.length - 1] = arr[arr.length - 1];
+  return result;
+}
+
+async function openItemDetail(name, appid) {
+  const modal = document.getElementById('item-modal');
+  modal.classList.add('open');
+
+  document.getElementById('item-modal-name').textContent = name;
+  ['istat-price','istat-1h','istat-24h','istat-volume','istat-min','istat-max'].forEach(id => {
+    const el = document.getElementById(id);
+    el.textContent = '...';
+    el.style.color = 'var(--text)';
+  });
+  document.getElementById('item-img-wrap').innerHTML =
+    '<div class="item-skin-placeholder">⏳</div>';
+  document.getElementById('item-chart-wrap').style.display = 'block';
+  document.getElementById('item-chart-empty').style.display = 'none';
+
+  const encoded = encodeURIComponent(name);
+  document.getElementById('item-steam-link').href =
+    `https://steamcommunity.com/market/listings/${appid}/${encoded}`;
+
+  // Load price history and image in parallel
+  const [history] = await Promise.all([
+    fetch(`/api/prices/${encoded}`).then(r => r.json()).catch(() => []),
+    fetch(`/api/steam/item-info/${encoded}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.ok && data.icon_url) {
+          const url = `https://community.cloudflare.steamstatic.com/economy/image/${data.icon_url}/360fx360f`;
+          document.getElementById('item-img-wrap').innerHTML =
+            `<img src="${url}" class="item-skin-img" alt=""
+              onerror="this.parentElement.innerHTML='<div class=\\'item-skin-placeholder\\'>🎮</div>'">`;
+        } else {
+          document.getElementById('item-img-wrap').innerHTML =
+            '<div class="item-skin-placeholder">🎮</div>';
+        }
+      })
+      .catch(() => {
+        document.getElementById('item-img-wrap').innerHTML =
+          '<div class="item-skin-placeholder">🎮</div>';
+      })
+  ]);
+
+  if (!history.length) {
+    ['istat-price','istat-1h','istat-24h','istat-volume','istat-min','istat-max'].forEach(id => {
+      document.getElementById(id).textContent = '—';
+    });
+    document.getElementById('item-chart-wrap').style.display = 'none';
+    document.getElementById('item-chart-empty').style.display = 'block';
+    return;
+  }
+
+  const prices = history.map(h => h.price);
+  const latest = history[history.length - 1];
+  const now = Date.now() / 1000;
+  const p1h  = findLastBefore(history, now - 3600);
+  const p24h = findLastBefore(history, now - 86400);
+  const minP = Math.min(...prices);
+  const maxP = Math.max(...prices);
+
+  document.getElementById('istat-price').textContent  = '$' + latest.price.toFixed(2);
+  document.getElementById('istat-volume').textContent = latest.volume ?? '—';
+  document.getElementById('istat-min').textContent    = '$' + minP.toFixed(2);
+  document.getElementById('istat-max').textContent    = '$' + maxP.toFixed(2);
+
+  function setPct(elId, current, old) {
+    const el = document.getElementById(elId);
+    if (!old) { el.textContent = '—'; return; }
+    const pct = ((current - old.price) / old.price) * 100;
+    el.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%';
+    el.style.color = pct > 0 ? 'var(--green)' : pct < 0 ? 'var(--red)' : 'var(--text)';
+  }
+  setPct('istat-1h',  latest.price, p1h);
+  setPct('istat-24h', latest.price, p24h);
+
+  renderItemChart(history);
+}
+
+function renderItemChart(history) {
+  if (itemPriceChart) { itemPriceChart.destroy(); itemPriceChart = null; }
+
+  const display = downsample(history, 300);
+  const prices  = display.map(h => h.price);
+
+  const trend = prices[prices.length - 1] >= prices[0];
+  const lineColor = trend ? '#2ed573' : '#ff4757';
+  const fillColor = trend ? 'rgba(46,213,115,0.1)' : 'rgba(255,71,87,0.1)';
+
+  const labels = display.map(h => {
+    const d = new Date(h.ts * 1000);
+    const ageH = (Date.now() / 1000 - h.ts) / 3600;
+    return ageH < 48
+      ? d.toLocaleTimeString('ru', {hour: '2-digit', minute: '2-digit'})
+      : d.toLocaleDateString('ru', {month: 'short', day: 'numeric'});
+  });
+
+  const minP = Math.min(...prices);
+  const maxP = Math.max(...prices);
+  const pad  = (maxP - minP) * 0.1 || maxP * 0.05;
+
+  const ctx = document.getElementById('item-price-chart').getContext('2d');
+  itemPriceChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: prices,
+        borderColor: lineColor,
+        borderWidth: 2,
+        backgroundColor: fillColor,
+        fill: true,
+        tension: 0.3,
+        pointRadius: display.length > 80 ? 0 : 3,
+        pointHoverRadius: 5,
+        pointBackgroundColor: lineColor,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      animation: { duration: 300 },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1a24',
+          borderColor: '#2a2a3a',
+          borderWidth: 1,
+          titleColor: '#6b6b80',
+          bodyColor: '#e8e8f0',
+          callbacks: {
+            label: ctx => ' $' + ctx.parsed.y.toFixed(2)
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { color: '#6b6b80', font: { size: 10 }, maxTicksLimit: 8 }
+        },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: {
+            color: '#6b6b80',
+            font: { size: 10 },
+            callback: v => '$' + v.toFixed(2)
+          },
+          min: minP - pad,
+          max: maxP + pad,
+        }
+      }
+    }
+  });
+}
+
+function closeItemModal() {
+  document.getElementById('item-modal').classList.remove('open');
+  if (itemPriceChart) { itemPriceChart.destroy(); itemPriceChart = null; }
+}
+
+// Event delegation for clickable rows
+document.addEventListener('click', function(e) {
+  const tr = e.target.closest('tr.clickable-row');
+  if (!tr) return;
+  if (e.target.closest('button') || e.target.closest('a')) return;
+  openItemDetail(tr.dataset.name, parseInt(tr.dataset.appid));
+});
+
+// Close item modal on backdrop click
+document.getElementById('item-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeItemModal();
+});
 
 // Закрыть модалку по клику на фон
 document.getElementById('add-modal').addEventListener('click', function(e) {
