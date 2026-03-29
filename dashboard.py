@@ -235,30 +235,28 @@ def api_user_delete(chat_id):
 @app.route("/api/prices/<path:item_name>")
 def api_prices(item_name):
     conn = get_db()
-    days     = request.args.get("days", 30, type=int)
-    currency = request.args.get("currency", None, type=int)
-    if currency is None:
-        currency = int(get_config("CURRENCY", 1))
+    days = request.args.get("days", 30, type=int)
     if days > 0:
         cutoff = int((datetime.now() - timedelta(days=days)).timestamp())
         rows = conn.execute(
-            """SELECT price, volume, timestamp FROM prices
-               WHERE item=? AND currency=? AND timestamp >= ?
+            """SELECT price, volume, timestamp, currency FROM prices
+               WHERE item=? AND timestamp >= ?
                ORDER BY timestamp ASC""",
-            (item_name, currency, cutoff)
+            (item_name, cutoff)
         ).fetchall()
     else:
         rows = conn.execute(
-            """SELECT price, volume, timestamp FROM prices
-               WHERE item=? AND currency=?
+            """SELECT price, volume, timestamp, currency FROM prices
+               WHERE item=?
                ORDER BY timestamp ASC""",
-            (item_name, currency)
+            (item_name,)
         ).fetchall()
     conn.close()
     return jsonify([{
-        "price": r["price"],
-        "volume": r["volume"],
-        "ts": r["timestamp"]
+        "price":    r["price"],
+        "volume":   r["volume"],
+        "ts":       r["timestamp"],
+        "currency": r["currency"],
     } for r in rows])
 
 @app.route("/api/db/purge", methods=["POST"])

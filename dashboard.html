@@ -1281,6 +1281,43 @@ function downsample(arr, max) {
   return result;
 }
 
+/**
+ * Нормализует массив цен при смене валюты:
+ * находит точки перехода (где меняется поле currency) и масштабирует
+ * все предыдущие сегменты по коэффициенту на границе, чтобы график
+ * оставался непрерывным. Все значения приводятся к шкале последнего сегмента.
+ */
+function normalizePrices(data) {
+  if (data.length < 2) return data;
+  // Проверяем: есть ли вообще смешение валют
+  const hasMultiple = data.some((d, i) => i > 0 && d.currency !== data[i - 1].currency);
+  if (!hasMultiple) return data;
+
+  // Находим индексы первых точек каждого нового сегмента
+  const boundaries = [];
+  for (let i = 1; i < data.length; i++) {
+    if (data[i].currency !== data[i - 1].currency) boundaries.push(i);
+  }
+
+  const result = data.map(d => ({ ...d }));
+
+  // Идём справа налево по границам, накапливаем коэффициент и масштабируем
+  let cumScale = 1.0;
+  for (let b = boundaries.length - 1; b >= 0; b--) {
+    const boundary = boundaries[b];
+    // Коэффициент на стыке: первая точка нового сегмента / последняя точка старого
+    const raw = data[boundary].price / data[boundary - 1].price;
+    if (!isFinite(raw) || raw === 0) continue;
+    cumScale *= raw;
+    // Масштабируем весь сегмент левее этой границы
+    const segStart = b > 0 ? boundaries[b - 1] : 0;
+    for (let i = segStart; i < boundary; i++) {
+      result[i] = { ...result[i], price: result[i].price * cumScale };
+    }
+  }
+  return result;
+}
+
 function setStatPct(elId, current, oldEntry) {
   const el = document.getElementById(elId);
   if (!oldEntry) { el.textContent = '—'; el.style.color = 'var(--text)'; return; }
@@ -1289,7 +1326,8 @@ function setStatPct(elId, current, oldEntry) {
   el.style.color = pct > 0 ? 'var(--green)' : pct < 0 ? 'var(--red)' : 'var(--text)';
 }
 
-function showItemStats(history) {
+function showItemStats(rawHistory) {
+  const history = normalizePrices(rawHistory);
   currentItemAllHistory = history;
 
   if (!history.length) {
@@ -1380,7 +1418,7 @@ async function openItemDetail(name, appid) {
 
   // Грузим всю историю из БД и картинку параллельно
   const [history] = await Promise.all([
-    fetch(`/api/prices/${encoded}?days=0&currency=${currentCurrencyCode}`).then(r => r.json()).catch(() => []),
+    fetch(`/api/prices/${encoded}?days=0`).then(r => r.json()).catch(() => []),
 
     // Картинка через наш прокси (Steam CDN напрямую из браузера не грузится)
     fetch(`/api/steam/item-info/${encoded}`)
@@ -1419,7 +1457,7 @@ async function openItemDetail(name, appid) {
     .then(async result => {
       if (result.ok && !result.skipped && result.inserted > 0) {
         // Появились новые данные — обновляем график
-        const fresh = await fetch(`/api/prices/${encoded}?days=0&currency=${currentCurrencyCode}`)
+        const fresh = await fetch(`/api/prices/${encoded}?days=0`)
           .then(r => r.json()).catch(() => []);
         if (fresh.length) showItemStats(fresh);
       } else if (!result.ok && !history.length) {
