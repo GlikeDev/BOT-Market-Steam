@@ -13,3 +13,14 @@ venv/
 # IDE
 .vscode/
 .idea/
+
+# Секретные файлы
+cookies.txt
+.env
+
+# Логи и временные файлы
+*_out.txt
+react-dist/
+
+# Папка с картинками скинов
+skin_images/
