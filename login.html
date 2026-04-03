@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Steam Bot — Вход</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #111118;
+  --surface2: #1a1a24;
+  --border: #2a2a3a;
+  --accent: #6c63ff;
+  --text: #e8e8f0;
+  --muted: #6b6b80;
+  --red: #ff4757;
+  --green: #2ed573;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(108,99,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(108,99,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+.card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 40px;
+  width: 380px;
+  max-width: 90vw;
+}
+.logo {
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+h2 {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 32px;
+  line-height: 1.5;
+}
+.step {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  padding: 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(108,99,255,0.2);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.step-text {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+}
+.step-text code {
+  font-family: 'Space Mono', monospace;
+  background: rgba(108,99,255,0.15);
+  color: var(--accent);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 24px 0;
+}
+.form-label {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+.code-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 22px;
+  font-family: 'Space Mono', monospace;
+  color: var(--text);
+  text-align: center;
+  letter-spacing: 0.3em;
+  transition: border-color 0.15s;
+  margin-bottom: 12px;
+}
+.code-input:focus { outline: none; border-color: var(--accent); }
+.code-input.error { border-color: var(--red); }
+.error-msg {
+  display: none;
+  font-size: 12px;
+  color: var(--red);
+  margin-bottom: 12px;
+  text-align: center;
+}
+.btn {
+  width: 100%;
+  padding: 13px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s;
+}
+.btn:hover { background: #7c75ff; transform: translateY(-1px); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">⬡ STEAM BOT</div>
+  <h2>Вход в панель</h2>
+  <p class="subtitle">Для входа нужен аккаунт Telegram, привязанный к боту</p>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-text">Открой Telegram и напиши боту команду <code>/login</code></div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-text">Бот пришлёт 6-значный код — введи его ниже</div>
+  </div>
+
+  <hr class="divider">
+
+  <label class="form-label">Код из Telegram</label>
+  <input class="code-input" id="code-input" type="text" placeholder="000000"
+    maxlength="6" inputmode="numeric" autocomplete="off">
+  <div class="error-msg" id="error-msg"></div>
+  <button class="btn" id="login-btn" onclick="doLogin()">Войти</button>
+</div>
+
+<script>
+const input = document.getElementById('code-input');
+const btn   = document.getElementById('login-btn');
+const errEl = document.getElementById('error-msg');
+
+input.addEventListener('input', () => {
+  input.classList.remove('error');
+  errEl.style.display = 'none';
+  // Авто-вход при вводе 6 цифр
+  if (input.value.replace(/\D/g, '').length === 6) doLogin();
+});
+
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+async function doLogin() {
+  const code = input.value.trim();
+  if (code.length < 6) {
+    showError('Введи 6-значный код');
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Проверяю...';
+  try {
+    const r = await fetch('/api/auth/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    }).then(r => r.json());
+
+    if (r.ok) {
+      window.location = '/';
+    } else {
+      showError(r.error || 'Неверный код');
+      btn.disabled = false;
+      btn.textContent = 'Войти';
+    }
+  } catch(e) {
+    showError('Ошибка соединения');
+    btn.disabled = false;
+    btn.textContent = 'Войти';
+  }
+}
+
+function showError(msg) {
+  input.classList.add('error');
+  errEl.textContent = msg;
+  errEl.style.display = 'block';
+  input.value = '';
+  input.focus();
+}
+
+input.focus();
+</script>
+</body>
+</html>

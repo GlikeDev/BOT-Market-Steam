@@ -1,0 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+/* ── Cyberpunk Neon — mesh gradient background ── */
+:root {
+  --mesh-cyan:    #00E5FF;
+  --mesh-purple:  #B041FF;
+  --mesh-pink:    #FF2060;
+  --mesh-bg:      #06080E;
+}
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background-color: var(--mesh-bg);
+  background-image:
+    radial-gradient(ellipse 80% 60% at 15% 25%,  #00E5FF18 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 85% 15%,  #B041FF22 0%, transparent 55%),
+    radial-gradient(ellipse 70% 55% at 70% 80%,  #FF206018 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 30% 75%,  #00E5FF10 0%, transparent 50%),
+    radial-gradient(ellipse 55% 42% at 55% 45%,  #B041FF0C 0%, transparent 55%),
+    linear-gradient(135deg, #060810 0%, #0A0D18 50%, #06080E 100%);
+  background-attachment: fixed;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+#react-inv-root {
+  width: 100%;
+}
+
+/* ── Inventory filter bar ── */
+.inv-filter-input,
+.inv-filter-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(13, 17, 32, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  color: rgba(237, 240, 247, 0.75);
+  font-size: 12px;
+  font-family: 'Inter', system-ui, sans-serif;
+  padding: 7px 12px;
+  height: 32px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  width: 100%;
+}
+
+.inv-filter-select {
+  padding-right: 28px; /* room for chevron */
+  min-width: 110px;
+}
+
+.inv-filter-input::placeholder {
+  color: rgba(255, 255, 255, 0.28);
+}
+
+.inv-filter-input:focus,
+.inv-filter-select:focus {
+  border-color: rgba(0, 229, 255, 0.45);
+  background: rgba(13, 17, 32, 0.85);
+  color: #EDF0F7;
+}
+
+.inv-filter-select option {
+  background: #0D1120;
+  color: #EDF0F7;
+}
+
+/* ── SkinCard hover interactions (Domain #10) ── */
+/* Border brightens when the card is hovered */
+.skin-card:hover {
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+
+/* Skin image scales up inside its container on card hover */
+.skin-card:hover .skin-img {
+  transform: scale(1.08);
+}

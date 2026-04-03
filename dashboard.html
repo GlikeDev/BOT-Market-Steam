@@ -4,159 +4,412 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Steam Price Bot</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hammerjs@2/hammer.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2/dist/chartjs-plugin-zoom.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <style>
 :root {
-  --bg: #0a0a0f;
-  --surface: #111118;
-  --surface2: #1a1a24;
-  --border: #2a2a3a;
-  --accent: #6c63ff;
-  --accent2: #00d4aa;
-  --danger: #ff4757;
-  --warning: #ffa502;
-  --text: #e8e8f0;
-  --muted: #6b6b80;
-  --green: #2ed573;
-  --red: #ff4757;
+  --bg:       #06080E;
+  --surface:  #0D1120;
+  --surface2: #111827;
+  --surface3: #141B2E;
+  --border:   rgba(255,255,255,0.07);
+  --border2:  rgba(255,255,255,0.12);
+  --accent:   #00E5FF;
+  --accent2:  #B041FF;
+  --danger:   #FF2060;
+  --warning:  #FFB300;
+  --text:     #EDF0F7;
+  --text2:    #8B9AB5;
+  --muted:    #4A5568;
+  --green:    #00FF94;
+  --red:      #FF2060;
+  --sidebar-w: 72px;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
   font-family: 'DM Sans', sans-serif;
-  background: var(--bg);
+  background-color: #06080E;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 15% 25%, #00E5FF18 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 85% 15%, #B041FF22 0%, transparent 55%),
+    radial-gradient(ellipse 70% 55% at 70% 80%, #FF206018 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 30% 75%, #00E5FF10 0%, transparent 50%),
+    radial-gradient(ellipse 55% 42% at 55% 45%, #B041FF0C 0%, transparent 55%),
+    linear-gradient(135deg, #060810 0%, #0A0D18 50%, #06080E 100%);
+  background-attachment: fixed;
   color: var(--text);
   min-height: 100vh;
   overflow-x: hidden;
 }
 
-/* Grid background */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(108,99,255,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(108,99,255,0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
-  pointer-events: none;
-  z-index: 0;
-}
+.app { display: flex; min-height: 100vh; }
 
-.app { position: relative; z-index: 1; display: flex; min-height: 100vh; }
-
-/* Sidebar */
+/* ══════════════ SIDEBAR ══════════════ */
 .sidebar {
-  width: 220px;
+  width: var(--sidebar-w);
   min-height: 100vh;
-  background: var(--surface);
-  border-right: 1px solid var(--border);
-  padding: 24px 0;
+  background: rgba(13,17,32,0.75);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-right: 1px solid rgba(0,229,255,0.08);
   display: flex;
   flex-direction: column;
+  align-items: center;
+  padding: 16px 0 12px;
   position: fixed;
   top: 0; left: 0; bottom: 0;
+  z-index: 50;
 }
 .logo {
-  padding: 0 20px 24px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 16px;
-}
-.logo-title {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #00E5FF 0%, #B041FF 100%);
+  display: flex; align-items: center; justify-content: center;
   font-family: 'Space Mono', monospace;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--accent);
-  letter-spacing: 0.05em;
+  font-size: 16px; font-weight: 700; color: #fff;
+  margin-bottom: 20px;
+  flex-shrink: 0;
 }
-.logo-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.logo-title { display: none; }
+.logo-sub   { display: none; }
+
+nav { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; padding: 0 10px; flex: 1; }
 
 .nav-item {
+  width: 100%;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 10px 20px;
+  justify-content: center;
+  gap: 3px;
+  padding: 10px 0;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
   color: var(--muted);
   transition: all 0.15s;
-  border-left: 2px solid transparent;
+  border-radius: 10px;
+  border-left: none;
+  position: relative;
 }
-.nav-item:hover { color: var(--text); background: var(--surface2); }
-.nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(108,99,255,0.08); }
-.nav-icon { font-size: 15px; width: 20px; text-align: center; }
+.nav-item:hover { color: var(--text2); background: var(--surface2); }
+.nav-item.active { color: var(--accent); background: rgba(0,229,255,0.10); }
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 20%; bottom: 20%;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+.nav-icon { font-size: 18px; line-height: 1; }
+.nav-label { font-size: 8.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
 
 .status-dot {
-  width: 6px; height: 6px; border-radius: 50%;
+  width: 7px; height: 7px; border-radius: 50%;
   background: var(--green);
   display: inline-block;
-  margin-right: 6px;
-  animation: pulse 2s infinite;
+  animation: pulse 2.5s infinite;
+  box-shadow: 0 0 6px var(--green);
 }
-@keyframes pulse {
-  0%,100% { opacity: 1; } 50% { opacity: 0.4; }
-}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
 .sidebar-footer {
-  margin-top: auto;
-  padding: 16px 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 12px 10px 0;
   border-top: 1px solid var(--border);
-  font-size: 11px;
-  color: var(--muted);
+  width: 100%;
+}
+.sidebar-user {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 0 10px;
+  width: 100%;
+}
+.sidebar-user-id { display: none; }
+.sidebar-user #sidebar-tg-name { display: none; }
+
+/* Sidebar avatar */
+.sidebar-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; color: #fff;
+  cursor: pointer; overflow: hidden; flex-shrink: 0;
+  border: 2px solid transparent;
+  transition: border-color .15s;
+  position: relative;
+}
+.sidebar-avatar:hover { border-color: var(--accent); }
+.sidebar-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.sidebar-avatar .online-dot {
+  position: absolute; bottom: 1px; right: 1px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--green); border: 2px solid var(--surface);
 }
 
-/* Main */
-.main { margin-left: 220px; flex: 1; padding: 32px; }
+.btn-logout {
+  width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 15px;
+  cursor: pointer;
+  transition: all .15s;
+  padding: 0;
+}
+.btn-logout:hover { color: var(--red); border-color: rgba(255,71,87,.4); background: rgba(255,71,87,.06); }
+
+/* ══════════════ TOPBAR ══════════════ */
+.topbar {
+  position: fixed;
+  top: 0; left: var(--sidebar-w); right: 0;
+  height: 56px;
+  background: rgba(13,17,32,0.80);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-bottom: 1px solid rgba(0,229,255,0.08);
+  display: flex; align-items: center;
+  padding: 0 28px;
+  z-index: 40;
+  gap: 12px;
+}
+.topbar-title {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  flex: 1;
+}
+.topbar-status {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 11px; color: var(--muted);
+}
+.topbar-actions { display: flex; align-items: center; gap: 8px; }
+.topbar-btn {
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 9px; cursor: pointer; font-size: 15px;
+  color: var(--muted); transition: all .15s;
+}
+.topbar-btn:hover { color: var(--text); border-color: var(--border2); }
+.topbar-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--accent); overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Space Mono',monospace; font-size: 12px; font-weight: 700; color: #fff;
+  cursor: pointer; border: 2px solid var(--border2); transition: border-color .15s;
+  flex-shrink: 0; position: relative;
+}
+.topbar-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.topbar-avatar .online-dot {
+  position: absolute; bottom: 0; right: 0;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--green); border: 2px solid var(--surface);
+}
+.topbar-avatar:hover { border-color: var(--accent); }
+
+/* ══════════════ MAIN ══════════════ */
+.main {
+  margin-left: var(--sidebar-w);
+  margin-top: 56px;
+  flex: 1;
+  padding: 28px 28px 40px;
+  min-width: 0;
+}
 
 .page { display: none; }
 .page.active { display: block; }
 
 /* Header */
 .page-header {
-  margin-bottom: 28px;
+  margin-bottom: 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 .page-title {
-  font-family: 'Space Mono', monospace;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--text);
+  letter-spacing: -.01em;
 }
-.page-subtitle { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.page-subtitle { font-size: 12px; color: var(--muted); margin-top: 3px; }
 
 /* Cards */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 28px;
+  gap: 14px;
+  margin-bottom: 24px;
 }
 .stat-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 20px;
-  transition: border-color 0.2s;
+  background: rgba(13,17,32,0.65);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  padding: 18px 20px;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
-.stat-card:hover { border-color: var(--accent); }
-.stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
-.stat-value { font-family: 'Space Mono', monospace; font-size: 28px; font-weight: 700; color: var(--text); }
+.stat-card:hover { border-color: rgba(0,229,255,.3); box-shadow: 0 4px 24px rgba(0,229,255,.08); }
+.stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; font-weight: 600; }
+.stat-value { font-family: 'Space Mono', monospace; font-size: 26px; font-weight: 700; color: var(--text); }
 .stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* ── Bento Grid Stats — Cyberpunk Dark ── */
+.bento-stats {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 12px;
+  perspective: 1400px;
+  margin-bottom: 20px;
+  /* Subtle ambient glow behind the glass */
+  background:
+    radial-gradient(ellipse at 15% 50%, rgba(0,229,255,.05) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 50%, rgba(176,65,255,.05) 0%, transparent 55%);
+  border-radius: 18px;
+  padding: 2px;
+}
+
+/* Glass card base */
+.bento-card {
+  position: relative;
+  border-radius: 16px;
+  padding: 20px 22px;
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255,255,255,0.07);
+  overflow: hidden;
+  cursor: default;
+  transition:
+    transform .28s cubic-bezier(.22,1,.36,1),
+    box-shadow .28s cubic-bezier(.22,1,.36,1),
+    border-color .2s ease;
+  will-change: transform;
+}
+
+/* Neon top-edge accent */
+.bento-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, var(--bc-accent) 0%, transparent 75%);
+  opacity: .9;
+}
+
+/* Inner ambient radial glow (top-left corner) */
+.bento-card::after {
+  content: '';
+  position: absolute;
+  top: -50%; left: -20%;
+  width: 65%; height: 65%;
+  background: radial-gradient(ellipse, var(--bc-glow) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Z-axis hover lift */
+.bento-card:hover {
+  transform: translateY(-7px) translateZ(28px) rotateX(1.5deg);
+  border-color: var(--bc-border);
+  box-shadow:
+    0 28px 56px rgba(0,0,0,.6),
+    0 0 0 1px var(--bc-border),
+    0 0 32px var(--bc-shadow);
+}
+
+/* Grid slot assignments + per-card Cyberpunk palette */
+.bento-portfolio {
+  grid-column: 1 / 3; grid-row: 1;
+  --bc-accent: #00E5FF; --bc-glow: rgba(0,229,255,.10);
+  --bc-border: rgba(0,229,255,.35); --bc-shadow: rgba(0,229,255,.18);
+}
+.bento-count {
+  grid-column: 3; grid-row: 1;
+  --bc-accent: #FFB300; --bc-glow: rgba(255,179,0,.10);
+  --bc-border: rgba(255,179,0,.35); --bc-shadow: rgba(255,179,0,.18);
+}
+.bento-1h {
+  grid-column: 1; grid-row: 2;
+  --bc-accent: #B041FF; --bc-glow: rgba(176,65,255,.10);
+  --bc-border: rgba(176,65,255,.35); --bc-shadow: rgba(176,65,255,.18);
+}
+.bento-trend {
+  grid-column: 2 / 4; grid-row: 2;
+  --bc-accent: #00FF94; --bc-glow: rgba(0,255,148,.10);
+  --bc-border: rgba(0,255,148,.35); --bc-shadow: rgba(0,255,148,.18);
+}
+
+/* Bento typography */
+.bc-label {
+  font-size: 10px;
+  color: rgba(255,255,255,.38);
+  text-transform: uppercase;
+  letter-spacing: .11em;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.bc-value {
+  font-family: 'Space Mono', monospace;
+  font-size: 26px;
+  font-weight: 700;
+  color: #EDF0F7;
+  line-height: 1.1;
+}
+.bc-value-xl { font-size: 30px; }
+.bc-sub {
+  font-size: 11px;
+  color: rgba(255,255,255,.32);
+  font-family: 'Space Mono', monospace;
+  margin-top: 4px;
+}
+.bc-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* Delta pill */
+.stat-delta-pill {
+  display: inline-flex; align-items: center;
+  padding: 3px 10px; border-radius: 20px;
+  font-size: 11px; font-family: 'Space Mono', monospace; font-weight: 700;
+  white-space: nowrap; border: 1px solid transparent;
+}
+.stat-delta-pill.up   { background: rgba(0,255,148,.13); color: #00FF94; border-color: rgba(0,255,148,.28); }
+.stat-delta-pill.down { background: rgba(255,32,96,.13);  color: #FF2060; border-color: rgba(255,32,96,.28); }
+.stat-delta-pill.flat { background: rgba(100,116,139,.13); color: rgba(255,255,255,.4); border-color: rgba(100,116,139,.2); }
+
+/* Trend bar */
+.bento-trend-bar {
+  display: flex; height: 5px; border-radius: 5px;
+  overflow: hidden; margin: 12px 0 11px;
+  background: rgba(255,255,255,.07);
+}
+.stat-trend-seg-up      { background: #00FF94; transition: width .6s cubic-bezier(.22,1,.36,1); }
+.stat-trend-seg-neutral { background: rgba(255,255,255,.18); transition: width .6s cubic-bezier(.22,1,.36,1); }
+.stat-trend-seg-down    { background: #FF2060; transition: width .6s cubic-bezier(.22,1,.36,1); }
+.bento-trend-labels {
+  display: flex; justify-content: space-between;
+  font-size: 12px; font-family: 'Space Mono', monospace; font-weight: 700;
+}
 
 /* Table */
 .table-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  background: rgba(13,17,32,0.65);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
   overflow: hidden;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.4);
 }
 .table-header {
-  padding: 16px 20px;
+  padding: 14px 20px;
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
@@ -166,33 +419,34 @@ body::before {
 table { width: 100%; border-collapse: collapse; }
 th {
   text-align: left;
-  padding: 10px 20px;
-  font-size: 11px;
+  padding: 9px 20px;
+  font-size: 10px;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
   border-bottom: 1px solid var(--border);
-  font-weight: 500;
+  font-weight: 600;
+  background: rgba(255,255,255,.015);
 }
 td {
-  padding: 12px 20px;
+  padding: 11px 20px;
   font-size: 13px;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.035);
 }
 tr:last-child td { border-bottom: none; }
-tr:hover td { background: rgba(255,255,255,0.02); }
+tr:hover td { background: rgba(108,99,255,0.04); }
 
 .badge {
   display: inline-block;
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 11px;
   font-family: 'Space Mono', monospace;
   font-weight: 700;
 }
-.badge-up { background: rgba(46,213,115,0.15); color: var(--green); }
-.badge-down { background: rgba(255,71,87,0.15); color: var(--red); }
-.badge-neutral { background: rgba(107,107,128,0.2); color: var(--muted); }
+.badge-up { background: rgba(61,214,140,0.12); color: var(--green); }
+.badge-down { background: rgba(255,71,87,0.12); color: var(--red); }
+.badge-neutral { background: rgba(90,102,128,0.18); color: var(--muted); }
 
 /* Buttons */
 .btn {
@@ -200,7 +454,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: 9px;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -208,57 +462,64 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   transition: all 0.15s;
   font-family: 'DM Sans', sans-serif;
 }
-.btn-primary { background: var(--accent); color: white; }
-.btn-primary:hover { background: #7c75ff; transform: translateY(-1px); }
-.btn-danger { background: rgba(255,71,87,0.15); color: var(--red); border: 1px solid rgba(255,71,87,0.3); }
-.btn-danger:hover { background: rgba(255,71,87,0.25); }
-.btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
-.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-primary { background: var(--accent); color: #06080E; font-weight: 700; box-shadow: 0 2px 16px rgba(0,229,255,.35); }
+.btn-primary:hover { background: #33EEFF; box-shadow: 0 4px 24px rgba(0,229,255,.50); transform: translateY(-1px); }
+.btn-danger { background: rgba(255,71,87,0.12); color: var(--red); border: 1px solid rgba(255,71,87,0.25); }
+.btn-danger:hover { background: rgba(255,71,87,0.22); }
+.btn-success { background: rgba(61,214,140,0.12); color: var(--green); border: 1px solid rgba(61,214,140,0.25); }
+.btn-success:hover { background: rgba(61,214,140,0.22); }
+.btn-ghost { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+.btn-ghost:hover { border-color: var(--border2); color: var(--text); }
+.btn-sm { padding: 5px 10px; font-size: 12px; border-radius: 7px; }
 
 /* Form */
-.form-group { margin-bottom: 16px; }
-.form-label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+.form-group { margin-bottom: 14px; }
+.form-label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
 .form-input {
   width: 100%;
   background: var(--surface2);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 9px;
   padding: 10px 14px;
   font-size: 13px;
   color: var(--text);
   font-family: 'DM Sans', sans-serif;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, background 0.15s;
 }
-.form-input:focus { outline: none; border-color: var(--accent); }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-input:focus { outline: none; border-color: var(--accent); background: var(--surface3); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
 /* Modal */
 .modal-overlay {
   position: fixed; inset: 0;
-  background: rgba(0,0,0,0.7);
+  background: rgba(5,8,15,0.75);
   display: none;
   align-items: center;
   justify-content: center;
   z-index: 100;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(6px);
 }
 .modal-overlay.open { display: flex; }
 .modal {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 28px;
+  background: rgba(13,17,32,0.92);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(0,229,255,0.15);
+  border-radius: 18px;
+  padding: 26px;
   width: 480px;
-  max-width: 90vw;
+  max-width: 92vw;
+  box-shadow: 0 24px 64px rgba(0,0,0,.55);
 }
-.modal-title { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+.modal-title { font-size: 15px; font-weight: 700; margin-bottom: 20px; letter-spacing: -.01em; }
 
 /* Config page */
 .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .config-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: rgba(13,17,32,0.65);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgba(255,255,255,0.07);
   border-radius: 12px;
   padding: 20px;
 }
@@ -299,18 +560,21 @@ input[type=range]::-webkit-slider-thumb {
   position: fixed;
   bottom: 24px; right: 24px;
   background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  border: 1px solid var(--border2);
+  border-radius: 12px;
   padding: 12px 18px;
   font-size: 13px;
+  font-weight: 500;
   z-index: 200;
   display: none;
   animation: slideUp 0.2s ease;
+  box-shadow: 0 8px 32px rgba(0,0,0,.4);
+  max-width: 340px;
 }
 .toast.show { display: block; }
-.toast.success { border-color: var(--green); color: var(--green); }
-.toast.error { border-color: var(--red); color: var(--red); }
-@keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.toast.success { border-color: rgba(61,214,140,.4); color: var(--green); }
+.toast.error { border-color: rgba(255,71,87,.4); color: var(--red); }
+@keyframes slideUp { from { transform: translateY(14px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
 .empty { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
 .mono { font-family: 'Space Mono', monospace; }
@@ -321,8 +585,10 @@ input[type=range]::-webkit-slider-thumb {
 
 /* Item detail modal */
 .item-modal {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: rgba(13,17,32,0.92);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(0,229,255,0.12);
   border-radius: 16px;
   width: min(740px, 94vw);
   max-height: 92vh;
@@ -404,6 +670,76 @@ input[type=range]::-webkit-slider-thumb {
   margin-bottom: 14px;
 }
 .item-chart-wrap { position: relative; height: 200px; }
+/* Site tiles */
+.sites-section {
+  padding: 16px 24px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.sites-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 12px;
+}
+.sites-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+@media (max-width: 700px) { .sites-grid { grid-template-columns: repeat(2, 1fr); } }
+.site-tile {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-top: 2px solid transparent;
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  text-decoration: none;
+  display: block;
+  transition: transform 0.15s, border-color 0.15s;
+}
+.site-tile:hover { transform: translateY(-2px); }
+.site-tile-name {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+.site-price-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 3px;
+}
+.site-price-row:last-child { margin-bottom: 0; }
+.site-price-label {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 600;
+  width: 48px;
+  flex-shrink: 0;
+}
+.site-price-value {
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  flex: 1;
+}
+.site-price-diff {
+  font-size: 10px;
+  font-family: 'Space Mono', monospace;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.site-tile-loading {
+  color: var(--muted);
+  font-size: 11px;
+  padding: 4px 0;
+}
+
 .item-modal-footer {
   display: flex;
   align-items: center;
@@ -414,6 +750,35 @@ tr.clickable-row { cursor: pointer; }
 tr.clickable-row:hover td { background: rgba(108,99,255,0.06) !important; }
 .item-chart-wrap canvas { cursor: grab; }
 .item-chart-wrap canvas:active { cursor: grabbing; }
+
+/* Rarity */
+.rarity-section-header td {
+  padding: 8px 20px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(255,255,255,0.025);
+  border-bottom: 1px solid var(--border);
+}
+.rarity-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-right: 7px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.rarity-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border: 1px solid;
+  white-space: nowrap;
+}
 .chart-range-wrap {
   display: flex;
   gap: 6px;
@@ -434,6 +799,377 @@ tr.clickable-row:hover td { background: rgba(108,99,255,0.06) !important; }
 }
 .range-btn:hover { color: var(--text); border-color: var(--accent); }
 .range-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* Inventory list */
+.inv-section-header {
+  padding: 8px 20px 6px 17px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: rgba(255,255,255,0.022);
+  border-bottom: 1px solid var(--border);
+  border-left: 3px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.inv-item {
+  display: grid;
+  grid-template-columns: 1fr 100px 80px 80px 56px;
+  align-items: center;
+  padding: 10px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  transition: background 0.12s, border-left-color 0.12s, transform 0.1s;
+  gap: 8px;
+}
+.inv-item:last-child { border-bottom: none; }
+.inv-item:hover { transform: translateX(2px); }
+.inv-item:hover .inv-item-name span { filter: brightness(1.2); }
+.inv-item-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.inv-item-price {
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+  text-align: right;
+}
+.inv-item-pct {
+  text-align: right;
+}
+.inv-item-vol {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: right;
+}
+.inv-item-pct-sm {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+.btn-notify {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: opacity 0.15s, transform 0.1s;
+  opacity: 0.55;
+}
+.btn-notify:hover { opacity: 1; transform: scale(1.15); }
+.btn-notify.muted { opacity: 0.3; filter: grayscale(1); }
+.inv-item.muted-row { opacity: 0.45; }
+.inv-items-header {
+  display: grid;
+  grid-template-columns: 1fr 100px 80px 80px 56px;
+  padding: 8px 20px;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.inv-items-header span {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+  text-align: right;
+}
+.inv-items-header span:first-child { text-align: left; }
+
+/* Auth */
+.admin-only { display: none; }
+.role-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.role-admin      { background: rgba(108,99,255,0.2); color: var(--accent); }
+.role-moderator  { background: rgba(61,214,140,0.15); color: var(--green); }
+.role-user       { background: rgba(107,107,128,0.2); color: var(--muted); }
+.verified-badge  {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: rgba(61,214,140,0.12); color: var(--green);
+  border: 1px solid rgba(61,214,140,0.25);
+  border-radius: 20px; padding: 1px 7px; font-size: 11px; font-weight: 600;
+}
+/* Admin user detail modal */
+#admin-user-modal .aum-header {
+  display: flex; align-items: center; gap: 14px; padding: 24px 24px 16px;
+  border-bottom: 1px solid var(--border);
+}
+#admin-user-modal .aum-avatar {
+  width: 56px; height: 56px; border-radius: 50%; flex-shrink: 0;
+  background: var(--accent); display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 700; color: #fff; overflow: hidden;
+}
+#admin-user-modal .aum-avatar img { width: 100%; height: 100%; object-fit: cover; }
+#admin-user-modal .aum-name { font-size: 17px; font-weight: 700; color: var(--text); }
+#admin-user-modal .aum-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+#admin-user-modal .aum-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 20px; }
+#admin-user-modal .aum-section-title {
+  font-size: 10px; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--muted); margin-bottom: 10px;
+}
+#admin-user-modal .aum-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+#admin-user-modal .aum-reports { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+#admin-user-modal .aum-report-item {
+  background: var(--surface2); border-radius: 6px; padding: 8px 12px; font-size: 12px;
+}
+#admin-user-modal .aum-report-item .aum-ri-subj { font-weight: 600; color: var(--text); }
+#admin-user-modal .aum-report-item .aum-ri-msg  { color: var(--text2); margin-top: 2px; }
+#admin-user-modal .aum-report-item .aum-ri-meta { color: var(--muted); font-size: 11px; margin-top: 3px; }
+.banned-row td { opacity: .45; }
+.banned-row td:first-child::before { content: '⊘ '; color: var(--red); }
+.report-status { display:inline-block; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600; }
+.rs-pending { background:rgba(255,180,0,.12); color:#f0a500; border:1px solid rgba(255,180,0,.25); }
+.rs-closed  { background:rgba(107,107,128,.12); color:var(--muted); border:1px solid rgba(107,107,128,.2); }
+.sidebar-user {
+  padding: 12px 20px 4px;
+  border-top: 1px solid var(--border);
+}
+.sidebar-user-id {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--text);
+  margin-bottom: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.btn-logout {
+  width: 100%;
+  padding: 7px 14px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s;
+  text-align: left;
+  margin-top: 6px;
+}
+.btn-logout:hover { color: var(--red); border-color: rgba(255,71,87,0.4); }
+
+/* Profile page */
+.profile-grid { display: grid; grid-template-columns: 360px 1fr; gap: 20px; }
+.avatar-circle {
+  width:56px; height:56px; border-radius:50%;
+  background:var(--accent); color:#fff;
+  font-family:'Space Mono',monospace; font-size:18px; font-weight:700;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; overflow:hidden; border:2px solid rgba(108,99,255,.3);
+}
+.avatar-circle img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+.trade-link-row { display:flex; gap:8px; align-items:center; }
+.trade-link-row .form-input { margin-bottom:0; flex:1; }
+.toggle-vis-btn {
+  flex-shrink:0; padding:7px 14px; border-radius:8px; font-size:12px; font-weight:600;
+  border:1px solid var(--border); background:var(--surface2); color:var(--muted);
+  cursor:pointer; transition:all .15s; white-space:nowrap;
+}
+.toggle-vis-btn.public { background:rgba(46,213,115,.12); color:var(--green); border-color:rgba(46,213,115,.35); }
+/* User profile modal/card */
+.user-profile-banner {
+  height:70px;
+  background:linear-gradient(135deg,rgba(108,99,255,.3) 0%,rgba(108,99,255,.07) 100%);
+  position:relative; border-radius:12px 12px 0 0;
+}
+.user-profile-avatar-wrap { position:absolute; bottom:-26px; left:20px; }
+.user-profile-body { padding:36px 20px 20px; }
+.user-profile-name { font-size:16px; font-weight:700; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.user-profile-handle { font-size:11px; color:var(--muted); margin-top:2px; }
+.user-profile-stats { display:flex; gap:10px; margin-top:14px; }
+.user-profile-stat { text-align:center; padding:8px 14px; background:var(--surface2); border-radius:8px; border:1px solid var(--border); }
+.user-profile-stat-val { font-size:16px; font-weight:700; color:var(--accent); }
+.user-profile-stat-lbl { font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin-top:2px; }
+.profile-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+}
+.profile-card-title {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 16px;
+}
+/* Notification toggle switch */
+.notif-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); }
+.notif-row:last-child { border-bottom:none; padding-bottom:0; }
+.notif-row-info { display:flex; flex-direction:column; gap:2px; }
+.notif-row-label { font-size:13px; font-weight:600; color:var(--text); }
+.notif-row-desc  { font-size:11px; color:var(--muted); }
+.notif-toggle { position:relative; width:38px; height:22px; flex-shrink:0; }
+.notif-toggle input { opacity:0; width:0; height:0; position:absolute; }
+.notif-slider {
+  position:absolute; inset:0; border-radius:22px; cursor:pointer;
+  background:var(--surface3); border:1px solid var(--border2);
+  transition:background .2s, border-color .2s;
+}
+.notif-slider::before {
+  content:''; position:absolute; width:16px; height:16px; border-radius:50%;
+  background:#fff; top:2px; left:2px; transition:transform .2s;
+}
+.notif-toggle input:checked + .notif-slider { background:var(--green); border-color:var(--green); }
+.notif-toggle input:checked + .notif-slider::before { transform:translateX(16px); }
+.steam-linked {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: rgba(46,213,115,0.08);
+  border: 1px solid rgba(46,213,115,0.2);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: var(--green);
+}
+
+/* ===== TRADES ===== */
+.trades-tabs { display:flex; gap:4px; margin-bottom:14px; padding:4px; background:var(--surface); border:1px solid var(--border); border-radius:12px; width:fit-content; }
+.trades-filter-bar { display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; align-items:center; }
+.tf-input { flex:1; min-width:180px; padding:8px 13px; border-radius:9px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-size:13px; outline:none; transition:border-color .15s; }
+.tf-input:focus { border-color:var(--accent); }
+.tf-select { padding:8px 11px; border-radius:9px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-size:13px; outline:none; cursor:pointer; transition:border-color .15s; }
+.tf-select:focus { border-color:var(--accent); }
+.trades-tab {
+  padding:6px 14px; border-radius:9px; cursor:pointer; font-size:12px; font-weight:600;
+  border:none; background:transparent; color:var(--muted); transition:all .15s; letter-spacing:.01em;
+}
+.trades-tab.active { background:var(--surface2); color:var(--text); box-shadow:0 1px 4px rgba(0,0,0,.25); }
+.trades-tab:hover:not(.active) { color:var(--text2); }
+.trades-grid { display:flex; flex-direction:column; gap:10px; }
+.trade-card {
+  background:var(--surface); border:1px solid var(--border); border-radius:14px;
+  display:flex; align-items:stretch; overflow:hidden;
+  transition:border-color .2s, box-shadow .2s, transform .15s;
+}
+.trade-card:hover { border-color:rgba(108,99,255,.35); box-shadow:0 4px 20px rgba(0,0,0,.3); transform:translateY(-1px); }
+.trade-card.mine  { border-color:rgba(108,99,255,.4); }
+.trade-card.status-closed,.trade-card.status-cancelled { opacity:.6; }
+/* info column */
+.tc-info {
+  display:flex; flex-direction:column; justify-content:center; gap:4px;
+  padding:12px 14px; min-width:110px; max-width:110px;
+  border-right:1px solid var(--border); background:rgba(255,255,255,.012); flex-shrink:0;
+}
+.tc-owner { font-size:11px; font-family:'Space Mono',monospace; color:var(--accent); }
+.tc-meta  { display:flex; flex-direction:column; gap:3px; }
+.tc-time  { font-size:10px; color:var(--muted); }
+.tc-bdg-mine { font-size:9px; padding:1px 6px; border-radius:3px; background:rgba(108,99,255,.18); color:var(--accent); font-weight:700; letter-spacing:.04em; align-self:flex-start; }
+.tc-bdg-closed    { font-size:9px; padding:1px 6px; border-radius:3px; background:rgba(107,107,128,.2); color:var(--muted); font-weight:700; align-self:flex-start; }
+.tc-bdg-cancelled { font-size:9px; padding:1px 6px; border-radius:3px; background:rgba(255,71,87,.15); color:var(--red); font-weight:700; align-self:flex-start; }
+/* skins sections */
+.tc-section { display:flex; flex-direction:column; justify-content:center; padding:10px 12px; flex:1; min-width:0; }
+.tc-lbl  { font-size:9px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin-bottom:6px; }
+.tc-skins { display:flex; flex-wrap:nowrap; gap:7px; overflow:hidden; }
+.tc-skin  { position:relative; width:76px; flex-shrink:0; }
+.tc-frame {
+  width:76px; height:60px; border-radius:9px; overflow:hidden;
+  background:var(--surface2); border:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; position:relative; transition:border-color .15s;
+}
+.tc-skin:hover .tc-frame { border-color:rgba(108,99,255,.4); }
+.tc-frame img { width:100%; height:100%; object-fit:contain; display:block; }
+.tc-wear-b { display:none; }
+.tc-nm   { font-size:9px; color:var(--text); opacity:.8; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center; }
+.tc-wear-pill { display:inline-block; font-size:8px; font-weight:700; font-family:'Space Mono',monospace; text-align:center; margin-top:2px; letter-spacing:.04em; padding:1px 5px; border-radius:4px; width:100%; box-sizing:border-box; }
+.tc-more { width:76px; height:60px; display:flex; align-items:center; justify-content:center; background:var(--surface2); border-radius:9px; border:1px solid var(--border); font-size:11px; font-weight:700; color:var(--muted); font-family:'Space Mono',monospace; }
+.tc-wants-any { font-size:11px; color:var(--muted); font-style:italic; line-height:1.4; min-height:60px; display:flex; align-items:center; }
+/* arrow divider */
+.tc-div  { display:flex; align-items:center; justify-content:center; padding:0 6px; color:var(--border); font-size:14px; flex-shrink:0; }
+/* actions column */
+.tc-actions {
+  display:flex; flex-direction:column; justify-content:center; gap:6px;
+  padding:10px 14px; min-width:140px; max-width:180px; flex-shrink:0;
+  border-left:1px solid var(--border);
+}
+.tc-note { font-size:11px; color:var(--muted); font-style:italic; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.tc-right { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+.tc-cnt { font-size:11px; color:var(--muted); cursor:pointer; white-space:nowrap; }
+.tc-cnt.has { color:var(--accent); font-weight:600; }
+.tc-cnt:hover { text-decoration:underline; }
+.td-skins { display:flex; flex-wrap:wrap; gap:12px; margin-bottom:4px; }
+.td-skin  { text-align:center; width:106px; }
+.td-frame { width:106px; height:82px; background:var(--surface2); border-radius:12px; border:1px solid var(--border); position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:30px; transition:border-color .15s; }
+.td-skin:hover .td-frame { border-color:rgba(108,99,255,.4); }
+.td-frame img { width:100%; height:100%; object-fit:contain; display:block; }
+.td-wear-b { display:none; }
+.td-nm   { font-size:11px; color:var(--text); opacity:.85; margin-top:5px; word-break:break-word; line-height:1.3; }
+.td-wear { display:inline-block; font-size:10px; font-weight:700; font-family:'Space Mono',monospace; margin-top:3px; padding:2px 7px; border-radius:5px; }
+.inv-selector { display:grid; grid-template-columns:repeat(auto-fill,minmax(80px,1fr)); gap:7px; max-height:270px; overflow-y:auto; padding:2px; }
+.inv-sel-item { position:relative; border:2px solid var(--border); border-radius:8px; padding:5px 3px; cursor:pointer; transition:all .13s; text-align:center; user-select:none; }
+.inv-sel-item:hover { border-color:var(--accent); }
+.inv-sel-item.sel   { border-color:var(--accent); background:rgba(108,99,255,.12); }
+.inv-sel-frame { width:56px; height:44px; margin:0 auto; border-radius:5px; overflow:hidden; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:16px; }
+.inv-sel-frame img { width:100%; height:100%; object-fit:contain; }
+.inv-sel-nm { font-size:9px; color:var(--muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.inv-sel-wr { font-size:9px; font-weight:700; color:var(--accent); font-family:'Space Mono',monospace; }
+.inv-sel-chk { position:absolute; top:2px; right:2px; width:14px; height:14px; border-radius:50%; background:var(--accent); color:#fff; font-size:8px; display:none; align-items:center; justify-content:center; line-height:1; }
+.inv-sel-item.sel .inv-sel-chk { display:flex; }
+.ac-wrap { position:relative; }
+.ac-drop { position:absolute; top:100%; left:0; right:0; background:var(--surface2); border:1px solid var(--accent); border-top:none; border-radius:0 0 8px 8px; z-index:300; max-height:200px; overflow-y:auto; display:none; }
+.ac-drop.open { display:block; }
+.ac-item { display:flex; align-items:center; gap:8px; padding:7px 12px; cursor:pointer; transition:background .1s; font-size:13px; }
+.ac-item:hover { background:rgba(108,99,255,.12); }
+.ac-item-img { width:34px; height:26px; object-fit:contain; flex-shrink:0; }
+.ac-item-nm  { flex:1; }
+.ac-item-wr  { font-size:10px; font-weight:700; color:var(--accent); font-family:'Space Mono',monospace; }
+.wants-tags { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; min-height:22px; }
+.wants-tag { display:flex; align-items:center; gap:4px; background:rgba(108,99,255,.15); border:1px solid rgba(108,99,255,.4); border-radius:6px; padding:3px 8px; font-size:11px; cursor:pointer; transition:all .13s; }
+.wants-tag:hover { background:rgba(255,71,87,.15); border-color:rgba(255,71,87,.4); }
+.offers-list { display:flex; flex-direction:column; gap:10px; max-height:400px; overflow-y:auto; }
+.offer-item { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px; }
+.offer-hd   { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.offer-who  { font-size:12px; color:var(--accent); font-family:'Space Mono',monospace; }
+.mini-profile { display:flex; align-items:center; gap:8px; cursor:pointer; padding:6px 10px; border-radius:8px; border:1px solid var(--border); background:var(--surface); transition:border-color .15s; }
+.mini-profile:hover { border-color:var(--accent); }
+.mini-avatar { width:30px; height:30px; border-radius:50%; background:var(--accent); color:#fff; font-size:11px; font-weight:700; font-family:'Space Mono',monospace; display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden; }
+.mini-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+.mini-name { font-size:12px; font-weight:600; color:var(--text); display:flex; align-items:center; gap:4px; }
+.mini-handle { font-size:10px; color:var(--muted); }
+.v-tick {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+  background: var(--green); color: #fff; font-size: 9px; font-weight: 900;
+  line-height: 1;
+}
+.offers-users-row { display:flex; align-items:center; gap:10px; margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+.offers-users-arrow { font-size:18px; color:var(--border); flex-shrink:0; }
+.offer-sb   { font-size:11px; padding:2px 8px; border-radius:4px; font-weight:700; }
+.offer-sb.pending  { background:rgba(255,165,2,.15); color:#ffa502; }
+.offer-sb.accepted { background:rgba(46,213,115,.15); color:var(--green); }
+.offer-sb.declined { background:rgba(255,71,87,.15); color:var(--red); }
+.offer-note { font-size:12px; color:var(--muted); font-style:italic; margin:6px 0; }
+.offer-acts { display:flex; gap:8px; margin-top:10px; }
+
 </style>
 </head>
 <body>
@@ -441,89 +1177,62 @@ tr.clickable-row:hover td { background: rgba(108,99,255,0.06) !important; }
 
 <!-- Sidebar -->
 <aside class="sidebar">
-  <div class="logo">
-    <div class="logo-title">⬡ STEAM BOT</div>
-    <div class="logo-sub"><span class="status-dot"></span>активен</div>
-  </div>
+  <div class="logo">M</div>
   <nav>
-    <div class="nav-item active" onclick="showPage('dashboard')">
-      <span class="nav-icon">◈</span> Обзор
-    </div>
     <div class="nav-item" onclick="showPage('watchlist')">
-      <span class="nav-icon">◉</span> Watchlist
+      <span class="nav-icon">◉</span>
+      <span class="nav-label">Watch</span>
     </div>
-    <div class="nav-item" onclick="showPage('users')">
-      <span class="nav-icon">◎</span> Пользователи
+    <div class="nav-item" onclick="showPage('myprofile')">
+      <span class="nav-icon">◑</span>
+      <span class="nav-label">Профиль</span>
     </div>
-    <div class="nav-item" onclick="showPage('config')">
-      <span class="nav-icon">◌</span> Настройки
+    <div class="nav-item" onclick="showPage('profile')">
+      <span class="nav-icon">◐</span>
+      <span class="nav-label">Инвент.</span>
     </div>
-    <div class="nav-item" onclick="showPage('db')">
-      <span class="nav-icon">▦</span> База данных
+    <div class="nav-item" onclick="showPage('trades')">
+      <span class="nav-icon">⇄</span>
+      <span class="nav-label">Торговля</span>
+    </div>
+    <div class="nav-item admin-only" onclick="showPage('admin')">
+      <span class="nav-icon">⚙</span>
+      <span class="nav-label">Админ</span>
     </div>
   </nav>
+  <!-- hidden elements kept for JS -->
+  <div id="sidebar-tg-name" style="display:none">—</div>
+  <div class="sidebar-user-id" id="sidebar-tg-id" style="display:none">—</div>
+  <span class="role-badge" id="sidebar-role-badge" style="display:none">—</span>
   <div class="sidebar-footer">
-    Обновлено: <span id="last-update">—</span>
+    <div class="sidebar-avatar" onclick="showPage('myprofile')" id="sidebar-avatar-btn">
+      <span id="sidebar-avatar-initials">?</span>
+      <div class="online-dot"></div>
+    </div>
+    <button class="btn-logout" onclick="logout()" title="Выйти">⏏</button>
   </div>
 </aside>
+
+<!-- Topbar -->
+<header class="topbar">
+  <div class="topbar-title" id="topbar-page-title">Обзор</div>
+  <div class="topbar-status">
+    <span class="status-dot"></span>
+    <span style="font-size:11px;color:var(--muted)">Обновлено: <span id="last-update">—</span></span>
+  </div>
+  <div class="topbar-actions">
+    <div class="topbar-btn" title="Уведомления">🔔</div>
+    <div class="topbar-avatar" onclick="showPage('myprofile')" id="topbar-avatar">
+      <span id="topbar-avatar-initials">?</span>
+      <div class="online-dot"></div>
+    </div>
+  </div>
+</header>
 
 <!-- Main -->
 <main class="main">
 
   <!-- Dashboard -->
-  <div class="page active" id="page-dashboard">
-    <div class="page-header">
-      <div>
-        <div class="page-title">Обзор</div>
-        <div class="page-subtitle">Состояние бота и статистика</div>
-      </div>
-      <button class="btn btn-ghost" onclick="loadAll()">↻ Обновить</button>
-    </div>
-
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-label">Записей цен</div>
-        <div class="stat-value" id="stat-prices">—</div>
-        <div class="stat-sub">в базе данных</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Скинов в watchlist</div>
-        <div class="stat-value" id="stat-items">—</div>
-        <div class="stat-sub">общий список</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Пользователей</div>
-        <div class="stat-value" id="stat-users">—</div>
-        <div class="stat-sub">добавили инвентарь</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Данных собрано</div>
-        <div class="stat-value" id="stat-days">—</div>
-        <div class="stat-sub">дней истории</div>
-      </div>
-    </div>
-
-    <div class="table-card">
-      <div class="table-header">
-        <span class="table-title">Последние цены</span>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th>Предмет</th>
-            <th>Цена</th>
-            <th>1 час</th>
-            <th>Объём</th>
-            <th>Обновлено</th>
-          </tr>
-        </thead>
-        <tbody id="dashboard-table">
-          <tr><td colspan="5" class="empty">Загрузка...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
   <!-- Watchlist -->
   <div class="page" id="page-watchlist">
     <div class="page-header">
@@ -534,174 +1243,618 @@ tr.clickable-row:hover td { background: rgba(108,99,255,0.06) !important; }
       <button class="btn btn-primary" onclick="openAddModal()">+ Добавить скин</button>
     </div>
 
+    <!-- Stats -->
+    <div id="wl-stats" style="display:none;gap:12px;flex-wrap:wrap;margin-bottom:20px">
+      <div class="stat-card" style="padding:14px 20px;min-width:90px">
+        <div class="stat-label">Скинов</div>
+        <div class="stat-value" style="font-size:22px" id="wl-stat-count">—</div>
+      </div>
+      <div class="stat-card" style="padding:14px 20px;min-width:110px">
+        <div class="stat-label">Стоимость</div>
+        <div class="stat-value" style="font-size:20px" id="wl-stat-value">—</div>
+      </div>
+      <div class="stat-card" style="padding:14px 20px;min-width:90px">
+        <div class="stat-label">За 1ч</div>
+        <div class="stat-value" style="font-size:22px" id="wl-stat-profit">—</div>
+        <div class="stat-sub" id="wl-stat-profit-pct"></div>
+      </div>
+      <div class="stat-card" style="padding:14px 20px;min-width:80px">
+        <div class="stat-label">Растут</div>
+        <div class="stat-value" style="font-size:22px;color:var(--green)" id="wl-stat-up">—</div>
+      </div>
+      <div class="stat-card" style="padding:14px 20px;min-width:80px">
+        <div class="stat-label">Падают</div>
+        <div class="stat-value" style="font-size:22px;color:var(--red)" id="wl-stat-down">—</div>
+      </div>
+    </div>
+
+    <!-- Skins -->
     <div class="table-card">
       <div class="table-header">
-        <span class="table-title">Все предметы</span>
-        <span class="text-muted mono" id="wl-count" style="font-size:12px">—</span>
+        <span class="table-title">Скины <span id="wl-count" style="font-weight:400;color:var(--muted)"></span></span>
+        <span style="font-size:11px;color:var(--muted)">Сгруппировано по редкости</span>
       </div>
-      <table>
-        <thead>
-          <tr>
-            <th>Название</th>
-            <th>AppID</th>
-            <th>Цена</th>
-            <th>Изм. 1ч</th>
-            <th>Объём</th>
-            <th>Добавлен</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="watchlist-table">
-          <tr><td colspan="7" class="empty">Загрузка...</td></tr>
-        </tbody>
-      </table>
+      <div class="inv-items-header" style="grid-template-columns:1fr 100px 80px 56px 32px">
+        <span>Предмет</span>
+        <span>Цена</span>
+        <span>1 час</span>
+        <span>Объём</span>
+        <span></span>
+      </div>
+      <div id="watchlist-list">
+        <div class="empty">Загрузка...</div>
+      </div>
+    </div>
+
+    <!-- Cases -->
+    <div class="table-card" id="wl-cases-card" style="display:none">
+      <div class="table-header">
+        <span class="table-title">Кейсы <span id="wl-cases-count" style="font-weight:400;color:var(--muted)"></span></span>
+      </div>
+      <div class="inv-items-header" style="grid-template-columns:1fr 100px 80px 56px 32px">
+        <span>Предмет</span>
+        <span>Цена</span>
+        <span>1 час</span>
+        <span>Объём</span>
+        <span></span>
+      </div>
+      <div id="wl-cases-list"></div>
     </div>
   </div>
 
-  <!-- Users -->
-  <div class="page" id="page-users">
+  <!-- My Profile -->
+  <div class="page" id="page-myprofile">
     <div class="page-header">
       <div>
-        <div class="page-title">Пользователи</div>
-        <div class="page-subtitle">Добавившие свой инвентарь</div>
+        <div class="page-title">Мой профиль</div>
+        <div class="page-subtitle">Настройка публичного профиля</div>
       </div>
     </div>
-    <div class="table-card">
-      <table>
-        <thead>
-          <tr>
-            <th>Chat ID</th>
-            <th>Steam профиль</th>
-            <th>Steam ID</th>
-            <th>Скинов</th>
-            <th>Добавлен</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="users-table">
-          <tr><td colspan="6" class="empty">Загрузка...</td></tr>
-        </tbody>
-      </table>
+    <div style="max-width:600px">
+      <!-- Profile hero card -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:20px">
+        <!-- Banner -->
+        <div style="height:80px;background:linear-gradient(135deg,rgba(108,99,255,.35) 0%,rgba(108,99,255,.08) 100%);position:relative">
+          <div style="position:absolute;bottom:-28px;left:24px">
+            <div class="avatar-circle" id="myprofile-avatar" style="width:64px;height:64px;font-size:22px;border:3px solid var(--bg)">??</div>
+          </div>
+        </div>
+        <div style="padding:40px 24px 24px">
+          <!-- Name row -->
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+            <div>
+              <div id="myprofile-name-view" style="display:flex;align-items:center;gap:8px;cursor:pointer" onclick="startEditDisplayName()">
+                <span id="myprofile-display-name" style="font-size:20px;font-weight:700">—</span>
+                <span style="font-size:12px;color:var(--muted);margin-top:2px">✎</span>
+              </div>
+              <div id="myprofile-name-edit" style="display:none;margin-top:6px">
+                <input class="form-input" id="account-display-name-input" placeholder="Отображаемое имя"
+                  style="padding:6px 12px;font-size:14px;margin-bottom:8px"
+                  onkeydown="if(event.key==='Enter')saveProfileAccount();if(event.key==='Escape')cancelEditDisplayName()">
+                <div style="display:flex;gap:8px">
+                  <button class="btn btn-primary btn-sm" onclick="saveProfileAccount()">Сохранить</button>
+                  <button class="btn btn-ghost btn-sm" onclick="cancelEditDisplayName()">Отмена</button>
+                </div>
+              </div>
+              <div id="myprofile-tg-handle" style="font-size:12px;color:var(--muted);margin-top:4px"></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
+              <div style="text-align:center;padding:8px 16px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
+                <div style="font-size:18px;font-weight:700;color:var(--accent)" id="myprofile-trades-count">—</div>
+                <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Успешных трейдов</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Steam Account card -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px" id="steam-link-card">
+        <div class="profile-card-title">Steam аккаунт</div>
+        <!-- Unlinked state -->
+        <div id="steam-unlinked-state">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <div style="width:40px;height:40px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🔗</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:600;color:var(--text)">Аккаунт не привязан</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">Привяжи Steam для отслеживания инвентаря и трейдов</div>
+            </div>
+            <a href="/api/steam/login" class="btn btn-primary btn-sm" style="flex-shrink:0;text-decoration:none">
+              <span style="font-size:15px">🎮</span> Привязать Steam
+            </a>
+          </div>
+        </div>
+        <!-- Linked state -->
+        <div id="steam-linked-state" style="display:none">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <div id="steam-link-avatar" style="width:40px;height:40px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🎮</div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="color:var(--green);font-size:13px">✓</span>
+                <span style="font-size:13px;font-weight:600;color:var(--text)">Steam привязан</span>
+                <span class="steam-persona-name" style="font-size:12px;color:var(--muted)"></span>
+              </div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px;font-family:monospace" id="steam-link-id"></div>
+            </div>
+            <div style="display:flex;gap:8px;flex-shrink:0">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trade Link card -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px">
+        <div class="profile-card-title">Trade Link</div>
+        <div class="trade-link-row">
+          <input class="form-input" id="account-trade-link"
+                 placeholder="https://steamcommunity.com/tradeoffer/new/?partner=...">
+          <button class="toggle-vis-btn" id="trade-link-toggle" onclick="toggleTradeLinkVisibility()">🔒 Приватно</button>
+          <button class="btn btn-primary btn-sm" onclick="saveProfileAccount()">Сохранить</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px">
+          Публичная ссылка видна другим пользователям в разделе обменов.
+        </div>
+      </div>
+
+      <!-- Notifications card -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px">
+        <div class="profile-card-title">Уведомления Telegram</div>
+        <div class="notif-row">
+          <div class="notif-row-info">
+            <div class="notif-row-label">Цены инвентаря</div>
+            <div class="notif-row-desc">Скачки и просадки цен на скины из инвентаря</div>
+          </div>
+          <label class="notif-toggle">
+            <input type="checkbox" id="notif-inventory" onchange="saveNotifSettings()">
+            <span class="notif-slider"></span>
+          </label>
+        </div>
+        <div class="notif-row">
+          <div class="notif-row-info">
+            <div class="notif-row-label">Цены Watchlist</div>
+            <div class="notif-row-desc">Скачки и просадки цен на скины из списка отслеживания</div>
+          </div>
+          <label class="notif-toggle">
+            <input type="checkbox" id="notif-watchlist" onchange="saveNotifSettings()">
+            <span class="notif-slider"></span>
+          </label>
+        </div>
+        <div class="notif-row">
+          <div class="notif-row-info">
+            <div class="notif-row-label">Репорты</div>
+            <div class="notif-row-desc">Ответы и закрытие ваших репортов</div>
+          </div>
+          <label class="notif-toggle">
+            <input type="checkbox" id="notif-reports" onchange="saveNotifSettings()">
+            <span class="notif-slider"></span>
+          </label>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Config -->
-  <div class="page" id="page-config">
+  <!-- Profile -->
+  <div class="page" id="page-profile">
     <div class="page-header">
       <div>
-        <div class="page-title">Настройки</div>
-        <div class="page-subtitle">Параметры мониторинга — применяются без перезапуска</div>
+        <div class="page-title">Инвентарь</div>
+        <div class="page-subtitle" id="profile-subtitle">Привяжи Steam аккаунт для отслеживания своих скинов</div>
       </div>
-      <button class="btn btn-primary" onclick="saveConfig()">Сохранить</button>
+      <button class="btn btn-ghost" onclick="loadProfile()">↻ Обновить</button>
     </div>
 
-    <div class="config-grid">
-      <div class="config-card">
-        <div class="config-card-title">Интервал проверки</div>
-        <div class="form-group">
-          <div class="range-wrap">
-            <input type="range" id="cfg-interval" min="60" max="1800" step="60"
-              oninput="document.getElementById('cfg-interval-v').textContent = Math.round(this.value/60) + ' мин'">
-            <span class="range-val" id="cfg-interval-v">5 мин</span>
-          </div>
+    <!-- Steam status bar -->
+    <div id="profile-linked-card" style="margin-bottom:20px;display:none">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:6px;flex:1">
+          <span style="color:var(--green);font-size:14px">✓</span>
+          <span style="font-size:13px;font-weight:600;color:var(--text)">Steam привязан</span>
+          <span style="font-size:11px;color:var(--muted);font-family:monospace" id="profile-steam-id"></span>
         </div>
-        <div class="config-card-title" style="margin-top:20px">Мин. объём продаж</div>
-        <div class="form-group">
-          <div class="range-wrap">
-            <input type="range" id="cfg-volume" min="0" max="100" step="1"
-              oninput="document.getElementById('cfg-volume-v').textContent = this.value">
-            <span class="range-val" id="cfg-volume-v">5</span>
-          </div>
-        </div>
-      </div>
+        <!-- Bento Stats Grid -->
+        <div class="bento-stats" id="profile-quick-stats" style="display:none">
 
-      <div class="config-card">
-        <div class="config-card-title">Алерты роста цены</div>
-        <div class="form-group">
-          <label class="form-label">За 1 час (%)</label>
-          <div class="range-wrap">
-            <input type="range" id="cfg-spike1h" min="5" max="100" step="1"
-              oninput="document.getElementById('cfg-spike1h-v').textContent = '+' + this.value + '%'">
-            <span class="range-val" id="cfg-spike1h-v">+15%</span>
+          <!-- Portfolio + 24h (primary, 2-col) -->
+          <div class="bento-card bento-portfolio">
+            <div class="bc-label">Портфель</div>
+            <div class="bc-row" style="margin-bottom:8px">
+              <div class="bc-value bc-value-xl" id="pstat-total-value">—</div>
+              <div id="pstat-profit24-pill"></div>
+            </div>
+            <div class="bc-row">
+              <span style="font-size:10px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.09em;font-weight:600">За 24ч</span>
+              <span style="font-size:13px;font-family:'Space Mono',monospace;font-weight:700;color:#EDF0F7" id="pstat-profit24">—</span>
+              <span style="font-size:11px;font-family:'Space Mono',monospace;color:rgba(255,255,255,.4)" id="pstat-profit24-pct"></span>
+            </div>
           </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">За 24 часа (%)</label>
-          <div class="range-wrap">
-            <input type="range" id="cfg-spike24h" min="5" max="200" step="1"
-              oninput="document.getElementById('cfg-spike24h-v').textContent = '+' + this.value + '%'">
-            <span class="range-val" id="cfg-spike24h-v">+30%</span>
-          </div>
-        </div>
-      </div>
 
-      <div class="config-card">
-        <div class="config-card-title">Алерты падения цены</div>
-        <div class="form-group">
-          <label class="form-label">За 1 час (%)</label>
-          <div class="range-wrap">
-            <input type="range" id="cfg-drop1h" min="1" max="50" step="1"
-              oninput="document.getElementById('cfg-drop1h-v').textContent = '-' + this.value + '%'">
-            <span class="range-val" id="cfg-drop1h-v">-10%</span>
+          <!-- Скинов -->
+          <div class="bento-card bento-count">
+            <div class="bc-label">Скинов</div>
+            <div class="bc-value" id="pstat-count">—</div>
           </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">За 24 часа (%)</label>
-          <div class="range-wrap">
-            <input type="range" id="cfg-drop24h" min="1" max="100" step="1"
-              oninput="document.getElementById('cfg-drop24h-v').textContent = '-' + this.value + '%'">
-            <span class="range-val" id="cfg-drop24h-v">-20%</span>
-          </div>
-        </div>
-      </div>
 
-      <div class="config-card">
-        <div class="config-card-title">Валюта</div>
-        <div class="form-group">
-          <select class="form-input" id="cfg-currency">
-            <option value="1">USD — Доллар 🇺🇸</option>
-            <option value="5">RUB — Рубль 🇷🇺</option>
-            <option value="18">UAH — Гривна 🇺🇦</option>
-            <option value="37">KZT — Тенге 🇰🇿</option>
-            <option value="23">CNY — Юань 🇨🇳</option>
-          </select>
-        </div>
-        <div class="config-card-title" style="margin-top:8px;font-size:11px;color:var(--muted)">
-          Изменение валюты применится при следующей проверке цен
+          <!-- За 1ч -->
+          <div class="bento-card bento-1h">
+            <div class="bc-label">За 1ч</div>
+            <div class="bc-value" style="font-size:22px" id="pstat-profit1h">—</div>
+            <div class="bc-sub" id="pstat-profit1h-pct"></div>
+          </div>
+
+          <!-- Trend bar (2-col) -->
+          <div class="bento-card bento-trend">
+            <div class="bc-label">Тренд портфеля</div>
+            <div class="bento-trend-bar">
+              <div class="stat-trend-seg-up"      id="pstat-seg-up"      style="width:0%"></div>
+              <div class="stat-trend-seg-neutral" id="pstat-seg-neutral" style="width:0%"></div>
+              <div class="stat-trend-seg-down"    id="pstat-seg-down"    style="width:0%"></div>
+            </div>
+            <div class="bento-trend-labels">
+              <span style="color:#00FF94">↑&nbsp;<span id="pstat-up">0</span> растут</span>
+              <span style="color:rgba(255,255,255,.4)">—&nbsp;<span id="pstat-neutral">0</span> без изм.</span>
+              <span style="color:#FF2060">↓&nbsp;<span id="pstat-down">0</span> падают</span>
+            </div>
+          </div>
+
         </div>
       </div>
+    </div>
+
+    <!-- Inventory content (shown only when linked) -->
+    <div id="profile-inv-content" style="display:none">
+      <div id="react-inv-root"></div>
+
     </div>
   </div>
 
-  <!-- DB -->
-  <div class="page" id="page-db">
+  <!-- Trades -->
+  <div class="page" id="page-trades">
     <div class="page-header">
       <div>
-        <div class="page-title">База данных</div>
-        <div class="page-subtitle">Управление историей цен</div>
+        <div class="page-title">Торговля</div>
+        <div class="page-subtitle">Публичные обмены между пользователями</div>
+      </div>
+      <button class="btn btn-primary" onclick="openCreateTrade()">+ Новый трейд</button>
+    </div>
+
+    <div class="trades-tabs">
+      <div class="trades-tab active" id="ttab-all"         onclick="switchTradesTab('all')">Все трейды</div>
+      <div class="trades-tab"        id="ttab-active_mine" onclick="switchTradesTab('active_mine')">Активные</div>
+      <div class="trades-tab"        id="ttab-mine"        onclick="switchTradesTab('mine')">Мои трейды</div>
+      <div class="trades-tab"        id="ttab-my_offers"   onclick="switchTradesTab('my_offers')">Мои предложения</div>
+    </div>
+
+    <div class="trades-filter-bar">
+      <input  id="tf-name" type="text" placeholder="Поиск по названию скина..." oninput="applyTradeFilters()" class="tf-input">
+      <select id="tf-wear" onchange="applyTradeFilters()" class="tf-select">
+        <option value="">Все качества</option>
+        <option value="FN">Factory New</option>
+        <option value="MW">Minimal Wear</option>
+        <option value="FT">Field-Tested</option>
+        <option value="WW">Well-Worn</option>
+        <option value="BS">Battle-Scarred</option>
+      </select>
+      <select id="tf-cat" onchange="applyTradeFilters()" class="tf-select">
+        <option value="">Все категории</option>
+        <option value="rifle">Винтовки</option>
+        <option value="pistol">Пистолеты</option>
+        <option value="smg">SMG</option>
+        <option value="shotgun">Дробовики</option>
+        <option value="sniper">Снайперские</option>
+        <option value="knife">Ножи</option>
+        <option value="gloves">Перчатки</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('tf-name').value='';document.getElementById('tf-wear').value='';document.getElementById('tf-cat').value='';applyTradeFilters()">Сбросить</button>
+    </div>
+
+    <div class="trades-grid" id="trades-grid">
+      <div class="empty" style="grid-column:1/-1">Загрузка...</div>
+    </div>
+  </div>
+
+  <!-- Admin Panel -->
+  <div class="page" id="page-admin">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Админ панель</div>
+        <div class="page-subtitle">Управление платформой</div>
       </div>
     </div>
-    <div class="config-grid">
-      <div class="config-card">
-        <div class="config-card-title">Очистка старых данных</div>
-        <div class="form-group">
-          <label class="form-label">Удалить записи старше (дней)</label>
-          <div class="range-wrap">
-            <input type="range" id="purge-days" min="7" max="90" value="35" step="1"
-              oninput="document.getElementById('purge-days-v').textContent = this.value + ' дн'">
-            <span class="range-val" id="purge-days-v">35 дн</span>
+
+    <!-- Admin tabs -->
+    <div class="trades-tabs" style="margin-bottom:20px">
+      <div class="trades-tab active" id="atab-users"  onclick="switchAdminTab('users')">👥 Пользователи</div>
+      <div class="trades-tab"        id="atab-config" onclick="switchAdminTab('config')">⚙ Настройки</div>
+      <div class="trades-tab"        id="atab-db"     onclick="switchAdminTab('db')">🗄 База данных</div>
+      <div class="trades-tab"        id="atab-reports" onclick="switchAdminTab('reports')">🚩 Репорты</div>
+    </div>
+
+    <!-- Users tab -->
+    <div id="apanel-users">
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-title">Зарегистрированные аккаунты</span>
+          <span id="admin-users-count" style="font-size:12px;color:var(--muted)"></span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Пользователь</th>
+              <th>Chat ID</th>
+              <th>Steam</th>
+              <th>Роль</th>
+              <th>Скинов</th>
+              <th>Watchlist</th>
+              <th>Регистрация</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="users-table">
+            <tr><td colspan="8" class="empty">Загрузка...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Config tab -->
+    <div id="apanel-config" style="display:none">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+        <button class="btn btn-primary" onclick="saveConfig()">Сохранить настройки</button>
+      </div>
+      <div class="config-grid">
+        <div class="config-card">
+          <div class="config-card-title">Интервал проверки</div>
+          <div class="form-group">
+            <div class="range-wrap">
+              <input type="range" id="cfg-interval" min="60" max="1800" step="60"
+                oninput="document.getElementById('cfg-interval-v').textContent = Math.round(this.value/60) + ' мин'">
+              <span class="range-val" id="cfg-interval-v">5 мин</span>
+            </div>
+          </div>
+          <div class="config-card-title" style="margin-top:20px">Мин. объём продаж</div>
+          <div class="form-group">
+            <div class="range-wrap">
+              <input type="range" id="cfg-volume" min="0" max="100" step="1"
+                oninput="document.getElementById('cfg-volume-v').textContent = this.value">
+              <span class="range-val" id="cfg-volume-v">5</span>
+            </div>
           </div>
         </div>
-        <button class="btn btn-danger" onclick="purgeDB()">Очистить старые данные</button>
+        <div class="config-card">
+          <div class="config-card-title">Алерты роста цены</div>
+          <div class="form-group">
+            <label class="form-label">За 1 час (%)</label>
+            <div class="range-wrap">
+              <input type="range" id="cfg-spike1h" min="5" max="100" step="1"
+                oninput="document.getElementById('cfg-spike1h-v').textContent = '+' + this.value + '%'">
+              <span class="range-val" id="cfg-spike1h-v">+15%</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">За 24 часа (%)</label>
+            <div class="range-wrap">
+              <input type="range" id="cfg-spike24h" min="5" max="200" step="1"
+                oninput="document.getElementById('cfg-spike24h-v').textContent = '+' + this.value + '%'">
+              <span class="range-val" id="cfg-spike24h-v">+30%</span>
+            </div>
+          </div>
+        </div>
+        <div class="config-card">
+          <div class="config-card-title">Алерты падения цены</div>
+          <div class="form-group">
+            <label class="form-label">За 1 час (%)</label>
+            <div class="range-wrap">
+              <input type="range" id="cfg-drop1h" min="1" max="50" step="1"
+                oninput="document.getElementById('cfg-drop1h-v').textContent = '-' + this.value + '%'">
+              <span class="range-val" id="cfg-drop1h-v">-10%</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">За 24 часа (%)</label>
+            <div class="range-wrap">
+              <input type="range" id="cfg-drop24h" min="1" max="100" step="1"
+                oninput="document.getElementById('cfg-drop24h-v').textContent = '-' + this.value + '%'">
+              <span class="range-val" id="cfg-drop24h-v">-20%</span>
+            </div>
+          </div>
+        </div>
+        <div class="config-card">
+          <div class="config-card-title">Валюта</div>
+          <div class="form-group">
+            <select class="form-input" id="cfg-currency">
+              <option value="1">USD — Доллар 🇺🇸</option>
+              <option value="5">RUB — Рубль 🇷🇺</option>
+              <option value="18">UAH — Гривна 🇺🇦</option>
+              <option value="37">KZT — Тенге 🇰🇿</option>
+              <option value="23">CNY — Юань 🇨🇳</option>
+            </select>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:8px">
+            Изменение валюты применится при следующей проверке цен
+          </div>
+        </div>
       </div>
-      <div class="config-card">
-        <div class="config-card-title">Статистика</div>
-        <div id="db-stats" style="font-size:13px;line-height:2;color:var(--muted)">Загрузка...</div>
+    </div>
+
+    <!-- DB tab -->
+    <div id="apanel-db" style="display:none">
+
+      <!-- Overview stats (from dashboard page) -->
+      <div class="stats-grid" style="margin-bottom:20px">
+        <div class="stat-card">
+          <div class="stat-label">Записей цен</div>
+          <div class="stat-value" id="stat-prices">—</div>
+          <div class="stat-sub">в базе данных</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Скинов в watchlist</div>
+          <div class="stat-value" id="stat-items">—</div>
+          <div class="stat-sub">общий список</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Пользователей</div>
+          <div class="stat-value" id="stat-users">—</div>
+          <div class="stat-sub">добавили инвентарь</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Дней истории</div>
+          <div class="stat-value" id="stat-days">—</div>
+          <div class="stat-sub">данных собрано</div>
+        </div>
+      </div>
+
+      <!-- Management cards -->
+      <div class="config-grid" style="margin-bottom:20px">
+        <div class="config-card">
+          <div class="config-card-title">Очистка старых данных</div>
+          <div class="form-group">
+            <label class="form-label">Удалить записи старше (дней)</label>
+            <div class="range-wrap">
+              <input type="range" id="purge-days" min="7" max="90" value="35" step="1"
+                oninput="document.getElementById('purge-days-v').textContent = this.value + ' дн'">
+              <span class="range-val" id="purge-days-v">35 дн</span>
+            </div>
+          </div>
+          <button class="btn btn-danger" onclick="purgeDB()">Очистить старые данные</button>
+        </div>
+        <div class="config-card">
+          <div class="config-card-title">Статистика базы данных</div>
+          <div id="db-stats" style="font-size:13px;line-height:2.2;color:var(--muted)">Загрузка...</div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="loadDBStats()">↻ Обновить</button>
+        </div>
+      </div>
+
+      <!-- Latest prices table -->
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-title">Последние цены</span>
+          <button class="btn btn-ghost btn-sm" onclick="loadAll()">↻ Обновить</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Предмет</th>
+              <th>Редкость</th>
+              <th>Цена</th>
+              <th>1 час</th>
+              <th>Объём</th>
+              <th>Обновлено</th>
+            </tr>
+          </thead>
+          <tbody id="dashboard-table">
+            <tr><td colspan="6" class="empty">Загрузка...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Reports tab -->
+    <div id="apanel-reports" style="display:none">
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-title">Жалобы пользователей</span>
+          <span id="admin-reports-count" style="font-size:12px;color:var(--muted)"></span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>От</th>
+              <th>Тема</th>
+              <th>Сообщение</th>
+              <th>Дата</th>
+              <th>Статус</th>
+            </tr>
+          </thead>
+          <tbody id="reports-table">
+            <tr><td colspan="5" class="empty">Загрузка...</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
 
 </main>
+</div>
+
+<!-- ===== TRADE MODALS ===== -->
+
+<!-- Create Trade Modal -->
+<div class="modal-overlay" id="trade-create-modal">
+  <div class="modal" style="width:600px;max-height:90vh;overflow-y:auto">
+    <div class="modal-title">Новый трейд</div>
+
+    <div class="form-group">
+      <div class="form-label">Выберите предметы, которые предлагаете</div>
+      <div id="trade-create-inv" class="inv-selector">
+        <div class="empty">Загрузка инвентаря...</div>
+      </div>
+      <div id="trade-create-sel-info" style="font-size:12px;color:var(--muted);margin-top:6px">Выбрано: 0</div>
+    </div>
+
+    <div class="form-group">
+      <div class="form-label">Что хотите получить (необязательно)</div>
+      <div class="ac-wrap">
+        <input class="form-input" id="trade-wants-input" placeholder="Введите название скина..."
+          oninput="onWantsInput(this)" autocomplete="off">
+        <div class="ac-drop" id="trade-wants-drop"></div>
+      </div>
+      <div class="wants-tags" id="trade-wants-tags"></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">
+        Оставьте пустым — и все смогут предложить что угодно
+      </div>
+    </div>
+
+    <div class="form-group">
+      <div class="form-label">Комментарий (необязательно)</div>
+      <input class="form-input" id="trade-create-note" placeholder="Например: ищу ножи или перчатки">
+    </div>
+
+    <div id="trade-create-error" style="display:none;font-size:12px;color:var(--red);margin-bottom:12px"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeTradeCreateModal()">Отмена</button>
+      <button class="btn btn-primary" onclick="submitCreateTrade()">Выставить на обмен</button>
+    </div>
+  </div>
+</div>
+
+<!-- Trade Detail / Make Offer Modal -->
+<div class="modal-overlay" id="trade-detail-modal">
+  <div class="modal" style="width:580px;max-height:90vh;overflow-y:auto">
+    <div id="trade-detail-content"><!-- filled by JS --></div>
+
+    <!-- Make offer section (shown when not own trade) -->
+    <div id="trade-offer-section" style="display:none;border-top:1px solid var(--border);margin-top:16px;padding-top:16px">
+      <div class="form-label" style="margin-bottom:10px">Ваше предложение — выберите предметы из инвентаря</div>
+      <div id="trade-offer-inv" class="inv-selector" style="max-height:240px">
+        <div class="empty">Загрузка...</div>
+      </div>
+      <div id="trade-offer-sel-info" style="font-size:12px;color:var(--muted);margin-top:6px">Выбрано: 0</div>
+      <div class="form-group" style="margin-top:12px">
+        <input class="form-input" id="trade-offer-note" placeholder="Сообщение владельцу (необязательно)">
+      </div>
+      <div id="trade-offer-error" style="display:none;font-size:12px;color:var(--red);margin-bottom:8px"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="closeTradeDetailModal()">Закрыть</button>
+        <button class="btn btn-primary" onclick="submitOffer()">Отправить предложение</button>
+      </div>
+    </div>
+    <div id="trade-detail-footer" style="display:flex;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-ghost" onclick="closeTradeDetailModal()">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<!-- Incoming Offers Modal (for trade owner) -->
+<div class="modal-overlay" id="trade-offers-modal">
+  <div class="modal" style="width:560px;max-height:90vh;overflow-y:auto">
+    <div class="modal-title">Входящие предложения</div>
+    <div class="offers-list" id="offers-list-content">
+      <div class="empty">Загрузка...</div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-ghost" onclick="closeOffersModal()">Закрыть</button>
+    </div>
+  </div>
 </div>
 
 <!-- Item detail modal -->
@@ -769,6 +1922,14 @@ tr.clickable-row:hover td { background: rgba(108,99,255,0.06) !important; }
       </div>
     </div>
 
+    <!-- Trading sites -->
+    <div class="sites-section">
+      <div class="sites-title">Цены на площадках</div>
+      <div class="sites-grid" id="sites-grid">
+        <div class="site-tile-loading">⏳ Загружаю цены...</div>
+      </div>
+    </div>
+
     <div class="item-modal-footer">
       <a id="item-steam-link" href="#" target="_blank" class="btn btn-ghost" style="text-decoration:none">
         ↗ Открыть на Steam Market
@@ -778,6 +1939,7 @@ tr.clickable-row:hover td { background: rgba(108,99,255,0.06) !important; }
   </div>
 </div>
 
+<!-- Link inventory modal -->
 <!-- Add item modal -->
 <div class="modal-overlay" id="add-modal">
   <div class="modal" style="width:520px">
@@ -867,6 +2029,176 @@ tr.clickable-row:hover td { background: rgba(108,99,255,0.06) !important; }
   </div>
 </div>
 
+<!-- User Profile Modal -->
+<div class="modal-overlay" id="user-profile-modal">
+  <div class="modal" style="width:400px;padding:0;overflow:hidden">
+    <div class="user-profile-banner" id="upm-banner"></div>
+    <div class="user-profile-body">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+        <div>
+          <div class="user-profile-name" id="upm-name">—</div>
+          <div class="user-profile-handle" id="upm-handle"></div>
+          <div class="user-profile-stats">
+            <div class="user-profile-stat">
+              <div class="user-profile-stat-val" id="upm-trades">—</div>
+              <div class="user-profile-stat-lbl">Успешных трейдов</div>
+            </div>
+          </div>
+        </div>
+        <div class="avatar-circle" id="upm-avatar" style="width:52px;height:52px;font-size:17px;flex-shrink:0">??</div>
+      </div>
+      <div id="upm-trade-link-row" style="display:none;margin-top:16px">
+        <a id="upm-trade-link-btn" href="#" target="_blank" class="btn btn-primary" style="width:100%;text-align:center;text-decoration:none;display:block">
+          🔗 Открыть Trade Link
+        </a>
+      </div>
+      <div id="upm-report-row" style="margin-top:10px;display:none">
+        <button class="btn btn-ghost" style="width:100%;color:var(--red);border-color:rgba(255,71,87,.25)" onclick="_reportFromProfile()">⚑ Пожаловаться</button>
+      </div>
+    </div>
+    <button onclick="closeUserProfileModal()" style="position:absolute;top:10px;right:12px;background:rgba(0,0,0,.4);border:none;color:#fff;font-size:16px;cursor:pointer;border-radius:6px;padding:2px 8px;line-height:1.4">✕</button>
+  </div>
+</div>
+
+<!-- Report Modal -->
+<div class="modal-overlay" id="report-modal">
+  <div class="modal" style="width:480px">
+    <div class="modal-title">⚑ Отправить репорт</div>
+    <div class="form-group">
+      <label class="form-label">Тема</label>
+      <input class="form-input" id="report-subject" placeholder="Кратко опишите проблему">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Сообщение</label>
+      <textarea class="form-input" id="report-message" rows="5"
+        placeholder="Подробно опишите ситуацию..."
+        style="resize:vertical;min-height:100px"></textarea>
+    </div>
+    <div id="report-error" style="display:none;font-size:12px;color:var(--red);margin-bottom:12px"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeReportModal()">Отмена</button>
+      <button class="btn btn-primary" onclick="submitReport()">Отправить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin user detail modal -->
+<div class="modal-overlay" id="admin-user-modal" onclick="if(event.target===this)closeAdminUserModal()">
+  <div class="modal" style="width:540px;max-height:90vh;overflow-y:auto;padding:0">
+    <div class="aum-header">
+      <div class="aum-avatar" id="aum-avatar"></div>
+      <div>
+        <div class="aum-name" id="aum-name">—</div>
+        <div class="aum-meta" id="aum-meta">—</div>
+      </div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+        <span id="aum-verified-badge"></span>
+        <a id="aum-tg-btn" href="#" target="_blank" style="display:none;align-items:center;gap:5px;padding:5px 10px;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;background:rgba(38,143,255,.15);color:#39a3f4;border:1px solid rgba(38,143,255,.3);transition:background .15s" onmouseover="this.style.background='rgba(38,143,255,.25)'" onmouseout="this.style.background='rgba(38,143,255,.15)'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L8.32 14.617l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.828.942z"/></svg>
+          Telegram
+        </a>
+        <a id="aum-steam-btn" href="#" target="_blank" style="display:none;align-items:center;gap:5px;padding:5px 10px;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;background:rgba(103,193,245,.1);color:#67c1f5;border:1px solid rgba(103,193,245,.25);transition:background .15s" onmouseover="this.style.background='rgba(103,193,245,.2)'" onmouseout="this.style.background='rgba(103,193,245,.1)'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.605 0 11.979 0zM7.54 18.21l-1.473-.61c.262.543.714.999 1.314 1.25 1.297.539 2.793-.076 3.332-1.375.263-.63.264-1.319.005-1.949s-.75-1.121-1.377-1.383c-.624-.26-1.29-.249-1.878-.03l1.523.63c.956.4 1.409 1.5 1.009 2.455-.397.957-1.497 1.41-2.455 1.012zm11.415-9.303c0-1.662-1.353-3.015-3.015-3.015-1.665 0-3.015 1.353-3.015 3.015 0 1.665 1.35 3.015 3.015 3.015 1.663 0 3.015-1.35 3.015-3.015zm-5.273-.005c0-1.252 1.013-2.266 2.265-2.266 1.249 0 2.266 1.014 2.266 2.266 0 1.251-1.017 2.265-2.266 2.265-1.252 0-2.265-1.014-2.265-2.265z"/></svg>
+          Steam
+        </a>
+        <button class="btn btn-ghost btn-sm" onclick="closeAdminUserModal()">✕</button>
+      </div>
+    </div>
+    <div class="aum-body">
+
+      <!-- Actions row -->
+      <div>
+        <div class="aum-section-title">Действия</div>
+        <div class="aum-actions">
+          <button class="btn btn-ghost btn-sm" id="aum-verify-btn" onclick="aumToggleVerify()">✓ Верифицировать</button>
+          <button class="btn btn-ghost btn-sm" id="aum-unlink-steam-btn" onclick="aumUnlinkSteam()">⊗ Отвязать Steam</button>
+          <button class="btn btn-danger btn-sm" id="aum-ban-btn" onclick="aumToggleBan()">⊘ Забанить</button>
+        </div>
+      </div>
+
+      <!-- Display name -->
+      <div>
+        <div class="aum-section-title">Отображаемое имя</div>
+        <div style="display:flex;gap:8px">
+          <input class="form-input" id="aum-display-name" placeholder="Оставьте пустым для сброса" style="flex:1">
+          <button class="btn btn-primary btn-sm" onclick="aumSaveDisplayName()">Сохранить</button>
+        </div>
+      </div>
+
+      <!-- Role -->
+      <div>
+        <div class="aum-section-title">Роль</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-sm" id="aum-role-admin"     onclick="aumSetRole('admin')">👑 Admin</button>
+          <button class="btn btn-sm" id="aum-role-moderator" onclick="aumSetRole('moderator')">🛡 Moderator</button>
+          <button class="btn btn-sm" id="aum-role-user"      onclick="aumSetRole('user')">👤 User</button>
+        </div>
+      </div>
+
+      <!-- Reports toggle -->
+      <div>
+        <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:space-between;display:flex;align-items:center"
+          onclick="aumToggleReports()">
+          <span>🚩 Репорты</span>
+          <span id="aum-reports-summary" style="font-size:11px;color:var(--muted)"></span>
+        </button>
+        <div id="aum-reports-panel" style="display:none;margin-top:8px">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:6px">На пользователя</div>
+          <div id="aum-reports-about" style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px"></div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:6px">От пользователя</div>
+          <div id="aum-reports-by" style="display:flex;flex-direction:column;gap:4px"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Admin report detail modal -->
+<div class="modal-overlay" id="report-detail-modal" onclick="if(event.target===this)closeReportDetailModal()">
+  <div class="modal" style="width:520px;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:var(--text)" id="rdm-subject">—</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px" id="rdm-meta">—</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <span id="rdm-status-badge"></span>
+        <button class="btn btn-ghost btn-sm" onclick="closeReportDetailModal()">✕</button>
+      </div>
+    </div>
+
+    <div style="background:var(--surface2);border-radius:8px;padding:14px;font-size:13px;color:var(--text2);
+      line-height:1.6;margin-bottom:20px;border:1px solid var(--border)" id="rdm-message"></div>
+
+    <div class="form-group">
+      <label class="form-label">Сообщение пользователю (опционально)</label>
+      <textarea class="form-input" id="rdm-reply-text" rows="4"
+        placeholder="Напишите ответ, который придёт в Telegram пользователю..."
+        style="resize:vertical;min-height:90px"></textarea>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:4px">
+      <button class="btn btn-ghost" onclick="closeReportDetailModal()">Отмена</button>
+      <button class="btn btn-ghost" id="rdm-reply-btn" onclick="submitReportReply()">📨 Ответить</button>
+      <button class="btn btn-danger" id="rdm-close-btn" onclick="submitReportClose()">✓ Закрыть репорт</button>
+    </div>
+  </div>
+</div>
+
+<!-- Banned screen -->
+<div id="banned-screen" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);
+  display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px;text-align:center;padding:24px">
+  <div style="font-size:56px">🚫</div>
+  <div style="font-size:22px;font-weight:700;color:var(--text)">Аккаунт заблокирован</div>
+  <div style="font-size:14px;color:var(--muted);max-width:360px;line-height:1.6">
+    Ваш аккаунт был заблокирован администратором.<br>Если вы считаете это ошибкой — обратитесь в поддержку.
+  </div>
+  <button class="btn btn-ghost" onclick="fetch('/api/auth/logout',{method:'POST'}).then(()=>location.href='/login')">
+    Выйти
+  </button>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -878,6 +2210,49 @@ const CURRENCY_SYM  = {1:'$', 5:'₽', 18:'₴', 37:'₸', 23:'¥'};
 const CURRENCY_POST = new Set([5, 18, 37]); // символ после числа
 let currentCurrencyCode = 1;
 
+// Редкость CS2
+const RARITY_MAP = {
+  'Rarity_Common_Weapon':    {name: 'Ширпотреб',        color: '#b0c3d9'},
+  'Rarity_Uncommon_Weapon':  {name: 'Промышленное',     color: '#5e98d9'},
+  'Rarity_Rare_Weapon':      {name: 'Армейское',        color: '#4b69ff'},
+  'Rarity_Mythical_Weapon':  {name: 'Запрещённое',      color: '#8847ff'},
+  'Rarity_Legendary_Weapon': {name: 'Засекреченное',    color: '#d32ce6'},
+  'Rarity_Ancient_Weapon':   {name: 'Тайное',           color: '#eb4b4b'},
+  'Rarity_Ancient':          {name: 'Экстраординарное', color: '#e4ae39'},
+  'Rarity_Contraband':       {name: 'Контрабанда',      color: '#e4ae39'},
+  // Альтернативные форматы из API
+  'RARITY_COMMON':    {name: 'Ширпотреб',        color: '#b0c3d9'},
+  'RARITY_UNCOMMON':  {name: 'Промышленное',     color: '#5e98d9'},
+  'RARITY_RARE':      {name: 'Армейское',        color: '#4b69ff'},
+  'RARITY_MYTHICAL':  {name: 'Запрещённое',      color: '#8847ff'},
+  'RARITY_LEGENDARY': {name: 'Засекреченное',    color: '#d32ce6'},
+  'RARITY_ANCIENT':   {name: 'Тайное',           color: '#eb4b4b'},
+  'RARITY_CONTRABAND':{name: 'Контрабанда',      color: '#e4ae39'},
+};
+const RARITY_ORDER = [
+  'Rarity_Ancient','Rarity_Contraband','Rarity_Ancient_Weapon',
+  'Rarity_Legendary_Weapon','Rarity_Mythical_Weapon',
+  'Rarity_Rare_Weapon','Rarity_Uncommon_Weapon','Rarity_Common_Weapon',
+];
+
+function rarityInfo(rarity, rarityColor) {
+  if (RARITY_MAP[rarity]) return RARITY_MAP[rarity];
+  if (rarityColor)         return {name: rarity || '—', color: '#' + rarityColor};
+  return null;
+}
+
+function rarityBadge(rarity, rarityColor) {
+  const info = rarityInfo(rarity, rarityColor);
+  if (!info) return '';
+  return `<span class="rarity-badge" style="color:${info.color};border-color:${info.color}22;background:${info.color}18">${info.name}</span>`;
+}
+
+function rarityDot(rarity, rarityColor) {
+  const info = rarityInfo(rarity, rarityColor);
+  if (!info) return '';
+  return `<span class="rarity-dot" style="background:${info.color}"></span>`;
+}
+
 function currFmt(v) {
   const sym  = CURRENCY_SYM[currentCurrencyCode] || '$';
   const abs  = Math.abs(v);
@@ -888,15 +2263,98 @@ function currFmt(v) {
   return CURRENCY_POST.has(currentCurrencyCode) ? num + '\u00a0' + sym : sym + num;
 }
 
+let currentUser = null;
+
+async function initAuth() {
+  const me = await fetch('/api/auth/me').then(r => r.json()).catch(() => ({logged_in: false}));
+  if (!me.logged_in) { window.location = '/login'; return; }
+  if (me.banned) {
+    document.getElementById('banned-screen').style.display = 'flex';
+    return;
+  }
+  currentUser = me;
+
+  // Сайдбар (hidden fields kept for JS compat)
+  const displayName = me.first_name || (me.username ? '@' + me.username : '');
+  document.getElementById('sidebar-tg-name').textContent = displayName || 'Telegram';
+  document.getElementById('sidebar-tg-id').textContent = (me.username ? '@' + me.username + ' · ' : '') + 'tg: ' + me.telegram_id;
+  const badge = document.getElementById('sidebar-role-badge');
+  if (me.role === 'admin') {
+    badge.textContent = 'admin';
+    badge.className = 'role-badge role-admin';
+    document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('admin-only'));
+    // Admins start on Admin panel
+    document.getElementById('page-admin').classList.add('active');
+    const tb = document.getElementById('topbar-page-title');
+    if (tb) tb.textContent = 'Админ панель';
+    loadUsers(); loadConfig();
+  } else if (me.role === 'moderator') {
+    badge.textContent = 'moderator';
+    badge.className = 'role-badge role-moderator';
+    // Non-admins start on Trades
+    document.getElementById('page-trades').classList.add('active');
+    const tb = document.getElementById('topbar-page-title');
+    if (tb) tb.textContent = 'Торговля';
+    loadTrades();
+  } else {
+    badge.textContent = 'user';
+    badge.className = 'role-badge role-user';
+    // Non-admins start on Trades
+    document.getElementById('page-trades').classList.add('active');
+    const tb = document.getElementById('topbar-page-title');
+    if (tb) tb.textContent = 'Торговля';
+    loadTrades();
+  }
+
+  // Topbar & sidebar avatar
+  const initials = (displayName || 'U').slice(0,2).toUpperCase();
+  const avatarHtml = me.avatar_url
+    ? `<img src="${me.avatar_url}" alt="">`
+    : initials;
+  const sidebarAv = document.getElementById('sidebar-avatar-initials');
+  const topbarAv  = document.getElementById('topbar-avatar-initials');
+  if (sidebarAv) sidebarAv.outerHTML = me.avatar_url
+    ? `<img src="${me.avatar_url}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+    : `<span id="sidebar-avatar-initials">${initials}</span>`;
+  if (topbarAv) topbarAv.outerHTML = me.avatar_url
+    ? `<img src="${me.avatar_url}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+    : `<span id="topbar-avatar-initials">${initials}</span>`;
+}
+
+async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST' });
+  window.location = '/login';
+}
+
+const _pageTitles = {
+  dashboard: 'Обзор', watchlist: 'Watchlist', myprofile: 'Профиль',
+  profile: 'Инвентарь', trades: 'Торговля', admin: 'Админ панель'
+};
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   event.currentTarget.classList.add('active');
+  const tb = document.getElementById('topbar-page-title');
+  if (tb) tb.textContent = _pageTitles[name] || name;
   if (name === 'watchlist') loadWatchlist();
-  if (name === 'users') loadUsers();
-  if (name === 'config') loadConfig();
-  if (name === 'db') loadDBStats();
+  if (name === 'myprofile') loadMyProfile();
+  if (name === 'profile')   loadProfile();
+  if (name === 'trades')    loadTrades();
+  if (name === 'admin')     { loadUsers(); loadConfig(); }
+}
+
+let _adminTab = 'users';
+function switchAdminTab(tab) {
+  _adminTab = tab;
+  ['users','config','db','reports'].forEach(t => {
+    document.getElementById('atab-'   + t).classList.toggle('active', t === tab);
+    document.getElementById('apanel-' + t).style.display = t === tab ? '' : 'none';
+  });
+  if (tab === 'db')      { loadDBStats(); loadAll(); }
+  if (tab === 'reports') loadReports();
+  if (tab === 'config')  loadConfig();
+  if (tab === 'users')   loadUsers();
 }
 
 function toast(msg, type='success') {
@@ -926,79 +2384,919 @@ function pctBadge(pct) {
 
 async function loadAll() {
   document.getElementById('last-update').textContent = new Date().toLocaleTimeString('ru');
-  const [stats, cfg] = await Promise.all([
-    fetch('/api/stats').then(r => r.json()),
-    fetch('/api/config').then(r => r.json()),
+  const [stats, cfgRes] = await Promise.all([
+    fetch('/api/stats').then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch('/api/config').then(r => r.ok ? r.json() : null).catch(() => null),
   ]);
+  const cfg = cfgRes || {};
   currentCurrencyCode = cfg.currency ?? 1;
 
-  document.getElementById('stat-prices').textContent = stats.total_prices.toLocaleString();
-  document.getElementById('stat-items').textContent  = stats.total_items;
-  document.getElementById('stat-users').textContent  = stats.total_users;
-  document.getElementById('stat-days').textContent   = stats.db_age_days;
+  if (stats) {
+    document.getElementById('stat-prices').textContent = stats.total_prices.toLocaleString();
+    document.getElementById('stat-items').textContent  = stats.total_items;
+    document.getElementById('stat-users').textContent  = stats.total_users;
+    document.getElementById('stat-days').textContent   = stats.db_age_days;
+  }
 
-  const wl = await fetch('/api/watchlist').then(r => r.json());
+  const wl = await fetch('/api/watchlist').then(r => r.ok ? r.json() : []).catch(() => []);
   const tbody = document.getElementById('dashboard-table');
   if (!wl.length) {
     tbody.innerHTML = '<tr><td colspan="5" class="empty">Нет данных</td></tr>';
-    return;
+  } else {
+    tbody.innerHTML = wl.map(item => `
+      <tr class="clickable-row" data-name="${item.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" data-appid="${item.appid}">
+        <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${item.name}">
+          ${rarityDot(item.rarity, item.rarity_color)}${item.name}
+        </td>
+        <td>${rarityBadge(item.rarity, item.rarity_color)}</td>
+        <td class="mono">${item.price ? currFmt(item.price) : '—'}</td>
+        <td>${pctBadge(item.pct_1h)}</td>
+        <td class="text-muted">${item.volume ?? '—'}</td>
+        <td class="text-muted">${fmt(item.last_seen)}</td>
+      </tr>
+    `).join('');
   }
-  tbody.innerHTML = wl.map(item => `
-    <tr class="clickable-row" data-name="${item.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" data-appid="${item.appid}">
-      <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${item.name}">${item.name}</td>
-      <td class="mono">${item.price ? currFmt(item.price) : '—'}</td>
-      <td>${pctBadge(item.pct_1h)}</td>
-      <td class="text-muted">${item.volume ?? '—'}</td>
-      <td class="text-muted">${fmt(item.last_seen)}</td>
-    </tr>
-  `).join('');
+
+  // Обновляем watchlist-страницу если она активна
+  if (document.getElementById('page-watchlist').classList.contains('active')) {
+    renderWatchlist(wl);
+  }
+
+  // Обновляем профиль если он активен
+  if (document.getElementById('page-profile').classList.contains('active')) {
+    loadProfile();
+  }
+}
+
+function buildWlItems(items, color) {
+  return items.map(item => {
+    const safeName   = item.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+    const safeNameJs = item.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const price      = item.price ? currFmt(item.price) : '<span style="color:var(--muted)">—</span>';
+    const vol        = item.volume != null ? item.volume : '<span style="color:var(--muted)">—</span>';
+    const delBtn     = `<button class="btn btn-danger btn-sm" style="padding:2px 7px;font-size:11px"
+         onclick="event.stopPropagation();deleteItem('${safeNameJs}')">✕</button>`;
+    return `<div class="inv-item" style="grid-template-columns:1fr 100px 80px 56px 32px;border-left-color:transparent"
+      onmouseover="this.style.background='${color}14';this.style.borderLeftColor='${color}'"
+      onmouseout="this.style.background='';this.style.borderLeftColor='transparent'"
+      onclick="openItemDetail('${safeNameJs}', ${item.appid})">
+      <div class="inv-item-name">
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${color};font-weight:500;text-shadow:0 0 12px ${color}40" title="${safeName}">${safeName}</span>
+      </div>
+      <div class="inv-item-price">${price}</div>
+      <div class="inv-item-pct">${invPctBadge(item.pct_1h)}</div>
+      <div class="inv-item-vol">${vol}</div>
+      <div style="display:flex;align-items:center;justify-content:flex-end">${delBtn}</div>
+    </div>`;
+  }).join('');
 }
 
 async function loadWatchlist() {
-  const wl = await fetch('/api/watchlist').then(r => r.json());
-  document.getElementById('wl-count').textContent = wl.length + ' предметов';
-  const tbody = document.getElementById('watchlist-table');
-  if (!wl.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty">Список пуст. Добавьте предметы.</td></tr>';
+  const wl = await fetch('/api/watchlist').then(r => r.ok ? r.json() : []).catch(() => []);
+  renderWatchlist(wl);
+}
+
+function renderWatchlist(wl) {
+
+  const isCase = i => i.item_type === 'CSGO_Type_WeaponCase' || (!i.item_type && i.name.endsWith(' Case'));
+  const cases  = wl.filter(isCase);
+  const skins  = wl.filter(i => !isCase(i));
+
+  // Статистика (по скинам)
+  const statsEl = document.getElementById('wl-stats');
+  if (skins.length) {
+    statsEl.style.display = 'flex';
+    const withPct = skins.filter(i => i.pct_1h !== null && i.pct_1h !== undefined);
+    document.getElementById('wl-stat-count').textContent = skins.length;
+    document.getElementById('wl-stat-up').textContent    = withPct.filter(i => i.pct_1h > 0).length;
+    document.getElementById('wl-stat-down').textContent  = withPct.filter(i => i.pct_1h < 0).length;
+
+    const withVal = skins.filter(i => i.price);
+    const totalVal = withVal.reduce((s, i) => s + i.price, 0);
+    document.getElementById('wl-stat-value').textContent = withVal.length ? currFmt(totalVal) : '—';
+
+    const validProfit = skins.filter(i => i.price && i.last_seen);
+    const profitable  = skins.filter(i => i.price && i.pct_1h);
+    if (profitable.length) {
+      const old1h = profitable.reduce((s, i) => s + i.price / (1 + i.pct_1h / 100), 0);
+      const profitAmt = totalVal - old1h;
+      const profitPct = old1h > 0 ? (profitAmt / old1h * 100) : 0;
+      const sign = profitAmt >= 0 ? '+' : '';
+      const col  = profitAmt > 0 ? 'var(--green)' : profitAmt < 0 ? 'var(--red)' : 'var(--text)';
+      const el = document.getElementById('wl-stat-profit');
+      el.textContent = sign + currFmt(profitAmt);
+      el.style.color = col;
+      const pEl = document.getElementById('wl-stat-profit-pct');
+      pEl.textContent = sign + profitPct.toFixed(1) + '%';
+      pEl.style.color = col;
+    } else {
+      document.getElementById('wl-stat-profit').textContent = '—';
+      document.getElementById('wl-stat-profit-pct').textContent = '';
+    }
+  } else {
+    statsEl.style.display = 'none';
+  }
+
+  document.getElementById('wl-count').textContent = skins.length ? `(${skins.length})` : '';
+
+  // Кейсы
+  const casesCard  = document.getElementById('wl-cases-card');
+  const casesCount = document.getElementById('wl-cases-count');
+  const casesList  = document.getElementById('wl-cases-list');
+  const caseColor  = '#6c8ca8';
+  if (cases.length) {
+    casesCard.style.display = '';
+    casesCount.textContent  = `(${cases.length})`;
+    casesList.innerHTML     = buildWlItems(cases, caseColor);
+  } else {
+    casesCard.style.display = 'none';
+  }
+
+  // Скины
+  const list = document.getElementById('watchlist-list');
+  if (!skins.length) {
+    list.innerHTML = '<div class="empty">Список пуст. Добавьте предметы.</div>';
     return;
   }
-  tbody.innerHTML = wl.map(item => `
-    <tr class="clickable-row" data-name="${item.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" data-appid="${item.appid}">
-      <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${item.name}">${item.name}</td>
-      <td class="mono text-muted">${item.appid}</td>
-      <td class="mono">${item.price ? '$' + item.price.toFixed(2) : '—'}</td>
-      <td>${pctBadge(item.pct_1h)}</td>
-      <td class="text-muted">${item.volume ?? '—'}</td>
-      <td class="text-muted">${fmt(item.added_at)}</td>
-      <td>
-        <button class="btn btn-danger btn-sm" onclick="deleteItem('${item.name.replace(/'/g,"\\'")}')">✕</button>
-      </td>
-    </tr>
-  `).join('');
+
+  const groups = {};
+  for (const item of skins) {
+    const key = item.rarity || '';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(item);
+  }
+
+  let html = '';
+  const ordered = [...RARITY_ORDER.filter(k => groups[k]), ...Object.keys(groups).filter(k => !RARITY_ORDER.includes(k) && k !== '')];
+  if (groups['']) ordered.push('');
+
+  for (const key of ordered) {
+    const grp   = groups[key];
+    if (!grp) continue;
+    const info  = RARITY_MAP[key];
+    const color = info ? info.color : (grp[0].rarity_color ? '#' + grp[0].rarity_color : '#6b6b80');
+    const label = info ? info.name  : (key || 'Без категории');
+
+    html += `<div class="inv-section-header" style="border-left:3px solid ${color}">
+      <span style="color:${color};letter-spacing:0.12em">${label}</span>
+      <span style="color:var(--muted);font-weight:400;letter-spacing:0;text-transform:none">${grp.length} предм.</span>
+    </div>`;
+    html += buildWlItems(grp, color);
+  }
+  list.innerHTML = html;
 }
 
 async function loadUsers() {
-  const users = await fetch('/api/users').then(r => r.json());
+  const users = await fetch('/api/users').then(r => r.json()).catch(() => []);
   const tbody = document.getElementById('users-table');
+  const cntEl = document.getElementById('admin-users-count');
+  if (cntEl) cntEl.textContent = users.length ? `${users.length} аккаунтов` : '';
   if (!users.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty">Нет пользователей</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="empty">Нет пользователей</td></tr>';
     return;
   }
-  tbody.innerHTML = users.map(u => `
-    <tr>
-      <td class="mono">${u.chat_id}</td>
-      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-        <a href="${u.steam_url}" target="_blank" style="color:var(--accent);text-decoration:none">${u.steam_url || '—'}</a>
-      </td>
-      <td class="mono text-muted" style="font-size:11px">${u.steam_id || '—'}</td>
-      <td class="mono">${u.items}</td>
-      <td class="text-muted">${fmt(u.added_at)}</td>
-      <td>
+  tbody.innerHTML = users.map(u => {
+    const roleClass = u.role === 'admin' ? 'role-admin' : u.role === 'moderator' ? 'role-moderator' : 'role-user';
+    const displayName = u.display_name || u.first_name || u.username || ('#' + u.chat_id);
+    const avatarHtml = u.avatar_url
+      ? `<img src="${esc(u.avatar_url)}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;vertical-align:middle;margin-right:8px">`
+      : `<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:10px;font-weight:700;flex-shrink:0;margin-right:8px;vertical-align:middle">${displayName[0].toUpperCase()}</span>`;
+    const tgName = u.display_name
+      ? `${u.display_name}${u.username ? ` <span style="color:var(--muted);font-size:11px">@${u.username}</span>` : ''}`
+      : (u.first_name
+        ? (u.username ? `${u.first_name} <span style="color:var(--muted);font-size:11px">@${u.username}</span>` : u.first_name)
+        : (u.username ? `<span style="color:var(--muted)">@${u.username}</span>` : '<span style="color:var(--muted)">—</span>'));
+    const steamCell = u.steam_id
+      ? `<span style="font-size:11px;color:var(--green)">✓</span> <span style="font-size:11px;color:var(--muted);font-family:monospace">${u.steam_id}</span>`
+      : '<span style="color:var(--muted);font-size:12px">—</span>';
+    const verBadge = u.verified ? `<span class="v-tick" title="Верифицирован" style="margin-left:5px">✓</span>` : '';
+    return `<tr style="cursor:pointer" class="${u.banned ? 'banned-row' : ''}" onclick="openUserAdminModal('${u.chat_id}')">
+      <td><div style="display:flex;align-items:center">${avatarHtml}<span>${tgName}${verBadge}</span></div></td>
+      <td class="mono" style="font-size:11px;color:var(--muted)">${u.chat_id}</td>
+      <td>${steamCell}</td>
+      <td><span class="role-badge ${roleClass}">${u.role}</span></td>
+      <td class="mono" style="text-align:right">${u.items}</td>
+      <td class="mono" style="text-align:right">${u.watchlist_count}</td>
+      <td class="text-muted" style="font-size:11px">${fmt(u.created_at)}</td>
+      <td onclick="event.stopPropagation()"><div style="display:flex;gap:5px">
         <button class="btn btn-danger btn-sm" onclick="deleteUser('${u.chat_id}')">✕</button>
-      </td>
-    </tr>
-  `).join('');
+      </div></td>
+    </tr>`;
+  }).join('');
 }
+
+let _cachedReports = [];
+
+async function loadReports() {
+  const reports = await fetch('/api/reports').then(r=>r.json()).catch(()=>[]);
+  _cachedReports = reports;
+  const tbody = document.getElementById('reports-table');
+  const cntEl = document.getElementById('admin-reports-count');
+  const pending = reports.filter(r => r.status !== 'closed').length;
+  if (cntEl) cntEl.textContent = reports.length
+    ? `${reports.length} жалоб${pending ? ' · ' + pending + ' в ожидании' : ''}`
+    : 'Жалоб нет';
+  if (!reports.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">Жалоб нет</td></tr>';
+    return;
+  }
+  tbody.innerHTML = reports.map(r => {
+    const closed = r.status === 'closed';
+    const statusBadge = closed
+      ? '<span class="report-status rs-closed">Закрыто</span>'
+      : '<span class="report-status rs-pending">В ожидании</span>';
+    return `<tr style="${closed ? 'opacity:.5;cursor:default' : 'cursor:pointer'}" ${closed ? '' : `onclick="openReportDetailModal(${r.id})"`}>
+      <td style="font-size:12px;color:var(--muted);font-family:monospace">${esc(r.reporter_id)}</td>
+      <td style="font-weight:600">${esc(r.subject||'—')}</td>
+      <td style="font-size:12px;color:var(--text2);max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.message||'')}</td>
+      <td style="font-size:11px;color:var(--muted);white-space:nowrap">${fmt(r.created_at)}</td>
+      <td>${statusBadge}</td>
+    </tr>`;
+  }).join('');
+}
+
+let _rdmId = null;
+
+function openReportDetailModal(id) {
+  const r = _cachedReports.find(x => x.id === id);
+  if (!r) return;
+  _rdmId = id;
+  document.getElementById('rdm-subject').textContent = r.subject || '—';
+  document.getElementById('rdm-meta').textContent = 'От: ' + r.reporter_id + ' · ' + fmt(r.created_at);
+  document.getElementById('rdm-message').textContent = r.message || '';
+  document.getElementById('rdm-reply-text').value = '';
+  const closed = r.status === 'closed';
+  document.getElementById('rdm-status-badge').innerHTML = closed
+    ? '<span class="report-status rs-closed">Закрыто</span>'
+    : '<span class="report-status rs-pending">В ожидании</span>';
+  document.getElementById('rdm-close-btn').style.display = closed ? 'none' : '';
+  document.getElementById('report-detail-modal').classList.add('open');
+}
+
+function closeReportDetailModal() {
+  document.getElementById('report-detail-modal').classList.remove('open');
+  _rdmId = null;
+}
+
+async function submitReportReply() {
+  if (!_rdmId) return;
+  const msg = document.getElementById('rdm-reply-text').value.trim();
+  const r = await fetch(`/api/reports/${_rdmId}/reply`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({message: msg})
+  }).then(r=>r.json()).catch(()=>null);
+  if (!r || !r.ok) { toast('Ошибка', 'error'); return; }
+  toast(msg ? 'Ответ отправлен' : 'Репорт отмечен прочитанным');
+  closeReportDetailModal();
+  await loadReports();
+}
+
+async function submitReportClose() {
+  if (!_rdmId) return;
+  const msg = document.getElementById('rdm-reply-text').value.trim();
+  const r = await fetch(`/api/reports/${_rdmId}/close`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({message: msg})
+  }).then(r=>r.json()).catch(()=>null);
+  if (!r || !r.ok) { toast('Ошибка', 'error'); return; }
+  toast(msg ? 'Репорт закрыт и ответ отправлен' : 'Репорт закрыт');
+  closeReportDetailModal();
+  await loadReports();
+}
+
+async function setUserRole(chatId, role) {
+  const r = await fetch(`/api/users/${chatId}/role`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({role})
+  }).then(r => r.json());
+  if (r.ok) { toast(`Роль изменена на ${role}`); loadUsers(); }
+  else toast(r.error || 'Ошибка', 'error');
+}
+
+// --- Admin user detail modal ---
+let _aumChatId = null;
+let _aumData   = null;
+
+async function openUserAdminModal(chatId) {
+  _aumChatId = chatId;
+  const d = await fetch(`/api/admin/users/${chatId}`).then(r => r.json()).catch(() => null);
+  if (!d || d.error) { toast('Не удалось загрузить пользователя', 'error'); return; }
+  _aumData = d;
+
+  // Avatar
+  const ava = document.getElementById('aum-avatar');
+  const displayName = d.display_name || d.first_name || d.username || ('#' + d.chat_id);
+  if (d.avatar_url) {
+    ava.innerHTML = `<img src="${esc(d.avatar_url)}" alt="">`;
+  } else {
+    ava.innerHTML = esc(displayName.slice(0, 2).toUpperCase());
+  }
+
+  // Name & meta
+  document.getElementById('aum-name').textContent = displayName;
+  const metaParts = [];
+  if (d.username) metaParts.push('@' + d.username);
+  metaParts.push('tg: ' + d.chat_id);
+  if (d.persona_name) metaParts.push('Steam: ' + d.persona_name);
+  document.getElementById('aum-meta').textContent = metaParts.join(' · ');
+
+  // Telegram button
+  const tgBtn = document.getElementById('aum-tg-btn');
+  tgBtn.href = d.username ? `https://t.me/${d.username}` : `tg://user?id=${d.chat_id}`;
+  tgBtn.style.display = 'flex';
+
+  // Steam profile button
+  const steamBtn = document.getElementById('aum-steam-btn');
+  if (d.steam_url) {
+    steamBtn.href = d.steam_url;
+    steamBtn.style.display = 'flex';
+  } else {
+    steamBtn.style.display = 'none';
+  }
+
+  // Verified badge
+  _aumRenderVerified(d.verified);
+
+  // Ban button
+  _aumRenderBan(d.banned);
+
+  // Display name input
+  document.getElementById('aum-display-name').value = d.display_name || '';
+
+  // Role buttons highlight
+  _aumRenderRole(d.role);
+
+  // Reports
+  _aumRenderReports('aum-reports-about', null, d.reports_about);
+  _aumRenderReports('aum-reports-by', null, d.reports_by);
+  _aumUpdateReportsSummary(d.reports_about, d.reports_by);
+  document.getElementById('aum-reports-panel').style.display = 'none';
+
+  document.getElementById('admin-user-modal').classList.add('open');
+}
+
+function closeAdminUserModal() {
+  document.getElementById('admin-user-modal').classList.remove('open');
+  _aumChatId = null;
+  _aumData   = null;
+}
+
+function _aumRenderBan(banned) {
+  const btn = document.getElementById('aum-ban-btn');
+  if (!btn) return;
+  if (banned) {
+    btn.textContent = '✓ Разбанить';
+    btn.className = 'btn btn-success btn-sm';
+  } else {
+    btn.textContent = '⊘ Забанить';
+    btn.className = 'btn btn-danger btn-sm';
+  }
+}
+
+function _aumRenderVerified(v) {
+  const badge = document.getElementById('aum-verified-badge');
+  const btn   = document.getElementById('aum-verify-btn');
+  if (v) {
+    badge.innerHTML = '<span class="verified-badge">✓ Верифицирован</span>';
+    btn.textContent = '✕ Снять верификацию';
+  } else {
+    badge.innerHTML = '';
+    btn.textContent = '✓ Верифицировать';
+  }
+}
+
+function _aumRenderRole(role) {
+  ['admin','moderator','user'].forEach(r => {
+    const btn = document.getElementById('aum-role-' + r);
+    if (!btn) return;
+    const active = role === r;
+    btn.className = 'btn btn-sm ' + (active
+      ? (r === 'admin' ? 'btn-primary' : r === 'moderator' ? 'btn-success' : 'btn-ghost')
+      : 'btn-ghost');
+    btn.style.opacity = active ? '1' : '0.6';
+  });
+}
+
+function _aumRenderReports(containerId, _unused, reports) {
+  const el = document.getElementById(containerId);
+  if (!reports.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:2px 0">Нет</div>';
+    return;
+  }
+  el.innerHTML = reports.map(r => {
+    const closed = r.status === 'closed';
+    const badge = closed
+      ? '<span class="report-status rs-closed">Закрыто</span>'
+      : '<span class="report-status rs-pending">В ожидании</span>';
+    const clickable = !closed;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;
+        background:var(--surface2);border:1px solid var(--border);
+        ${clickable ? 'cursor:pointer' : 'opacity:.5;cursor:default'}"
+        ${clickable ? `onclick="openReportDetailModal(${r.id})"` : ''}>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.subject||'—')}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:1px">${fmt(r.created_at)}</div>
+      </div>
+      ${badge}
+    </div>`;
+  }).join('');
+}
+
+function _aumUpdateReportsSummary(about, by) {
+  const total = about.length + by.length;
+  const pending = [...about, ...by].filter(r => r.status !== 'closed').length;
+  const el = document.getElementById('aum-reports-summary');
+  if (!el) return;
+  el.textContent = total
+    ? `${total}${pending ? ' · ' + pending + ' открытых' : ''}`
+    : 'нет';
+}
+
+function aumToggleReports() {
+  const panel = document.getElementById('aum-reports-panel');
+  panel.style.display = panel.style.display === 'none' ? '' : 'none';
+}
+
+async function aumToggleVerify() {
+  if (!_aumChatId) return;
+  const r = await fetch(`/api/admin/users/${_aumChatId}/verify`, {method:'POST'}).then(r=>r.json()).catch(()=>null);
+  if (!r || !r.ok) { toast('Ошибка', 'error'); return; }
+  if (_aumData) _aumData.verified = r.verified;
+  _aumRenderVerified(r.verified);
+  toast(r.verified ? 'Аккаунт верифицирован' : 'Верификация снята');
+  loadUsers();
+}
+
+async function aumSaveDisplayName() {
+  if (!_aumChatId) return;
+  const name = document.getElementById('aum-display-name').value.trim();
+  const r = await fetch(`/api/admin/users/${_aumChatId}/display-name`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({display_name: name})
+  }).then(r=>r.json()).catch(()=>null);
+  if (!r || !r.ok) { toast('Ошибка', 'error'); return; }
+  toast('Имя обновлено');
+  if (_aumData) {
+    _aumData.display_name = name;
+    const displayName = name || _aumData.first_name || _aumData.username || ('#' + _aumData.chat_id);
+    document.getElementById('aum-name').textContent = displayName;
+  }
+  loadUsers();
+}
+
+async function aumUnlinkSteam() {
+  if (!_aumChatId) return;
+  if (!confirm('Отвязать Steam аккаунт этого пользователя?')) return;
+  const r = await fetch(`/api/admin/users/${_aumChatId}/unlink-steam`, {method:'POST'}).then(r=>r.json()).catch(()=>null);
+  if (!r || !r.ok) { toast('Ошибка', 'error'); return; }
+  toast('Steam отвязан');
+  loadUsers();
+  if (_aumData) {
+    _aumData.steam_id = null; _aumData.avatar_url = ''; _aumData.persona_name = '';
+    document.getElementById('aum-avatar').innerHTML = esc((_aumData.display_name||_aumData.first_name||'?').slice(0,2).toUpperCase());
+    const metaParts = [];
+    if (_aumData.username) metaParts.push('@' + _aumData.username);
+    metaParts.push('tg: ' + _aumData.chat_id);
+    document.getElementById('aum-meta').textContent = metaParts.join(' · ');
+  }
+}
+
+async function aumToggleBan() {
+  if (!_aumChatId) return;
+  const r = await fetch(`/api/admin/users/${_aumChatId}/ban`, {method:'POST'}).then(r=>r.json()).catch(()=>null);
+  if (!r || !r.ok) { toast('Ошибка', 'error'); return; }
+  if (_aumData) _aumData.banned = r.banned;
+  _aumRenderBan(r.banned);
+  toast(r.banned ? 'Пользователь забанен' : 'Пользователь разбанен');
+  loadUsers();
+}
+
+async function aumSetRole(role) {
+  if (!_aumChatId) return;
+  const r = await fetch(`/api/users/${_aumChatId}/role`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({role})
+  }).then(r=>r.json()).catch(()=>null);
+  if (!r || !r.ok) { toast(r?.error || 'Ошибка', 'error'); return; }
+  toast(`Роль изменена на ${role}`);
+  if (_aumData) _aumData.role = role;
+  _aumRenderRole(role);
+  loadUsers();
+}
+
+async function toggleItemNotify(name, newNotify, btn) {
+  const row = btn.closest('.inv-item');
+  const r = await fetch('/api/profile/items/notify', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({name, notify: newNotify})
+  }).then(r => r.json()).catch(() => null);
+  if (!r || !r.ok) { toast('Ошибка сохранения'); return; }
+  const on = r.notify === 1;
+  btn.textContent = on ? '🔔' : '🔕';
+  btn.title       = on ? 'Отключить уведомления' : 'Включить уведомления';
+  btn.className   = 'btn-notify' + (on ? '' : ' muted');
+  btn.onclick     = (e) => { e.stopPropagation(); toggleItemNotify(name, on ? 0 : 1, btn); };
+  if (on) row.classList.remove('muted-row'); else row.classList.add('muted-row');
+  toast(on ? 'Уведомления включены' : 'Уведомления отключены');
+}
+
+function invPctBadge(pct) {
+  if (pct === null || pct === undefined) return '<span style="color:var(--muted);font-size:11px">—</span>';
+  const up   = pct > 0;
+  const down = pct < 0;
+  const bg     = up ? 'rgba(16,185,129,0.13)'  : down ? 'rgba(244,63,94,0.13)'   : 'rgba(100,116,139,0.13)';
+  const border = up ? 'rgba(16,185,129,0.25)'  : down ? 'rgba(244,63,94,0.25)'   : 'rgba(100,116,139,0.2)';
+  const cl     = up ? '#10B981'                : down ? '#F43F5E'                 : 'var(--muted)';
+  const sign = up ? '+' : '';
+  return `<span class="inv-item-pct-sm" style="background:${bg};color:${cl};border-color:${border}">${sign}${pct.toFixed(1)}%</span>`;
+}
+
+// ── User profile modal ────────────────────────────────────────────────────────
+
+let _viewingProfileId = null;
+
+async function openUserProfile(telegramId) {
+  _viewingProfileId = telegramId;
+  const d = await fetch(`/api/user/${telegramId}/profile`).then(r=>r.json()).catch(()=>null);
+  if (!d || !d.ok) { toast('Профиль не найден','error'); return; }
+
+  const avatarEl = document.getElementById('upm-avatar');
+  const initials = (d.display_name || d.first_name || d.username || '?')
+    .trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2);
+
+  if (d.avatar_url) {
+    const img = new Image();
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%';
+    img.src = d.avatar_url;
+    img.onerror = () => { avatarEl.innerHTML=''; avatarEl.textContent=initials; };
+    img.onload  = () => { avatarEl.innerHTML=''; avatarEl.appendChild(img); };
+  } else {
+    avatarEl.innerHTML = '';
+    avatarEl.textContent = initials;
+  }
+
+  const upmNameEl = document.getElementById('upm-name');
+  upmNameEl.innerHTML = '';
+  const nameSpan = document.createElement('span');
+  nameSpan.textContent = d.display_name || d.first_name || d.username || `#${telegramId.slice(-6)}`;
+  upmNameEl.appendChild(nameSpan);
+  if (d.verified) {
+    const vb = document.createElement('span');
+    vb.className = 'v-tick';
+    vb.title = 'Верифицирован';
+    vb.textContent = '✓';
+    vb.style.marginLeft = '7px';
+    upmNameEl.appendChild(vb);
+  }
+  document.getElementById('upm-handle').textContent  = d.username ? `@${d.username}` : '';
+  document.getElementById('upm-trades').textContent  = d.successful_trades ?? '—';
+
+  const tlRow = document.getElementById('upm-trade-link-row');
+  if (d.trade_link) {
+    document.getElementById('upm-trade-link-btn').href = d.trade_link;
+    tlRow.style.display = '';
+  } else {
+    tlRow.style.display = 'none';
+  }
+
+  // Hide report button on own profile
+  const myId = document.getElementById('sidebar-tg-id')?.textContent?.trim();
+  document.getElementById('upm-report-row').style.display = (telegramId !== myId) ? '' : 'none';
+
+  document.getElementById('user-profile-modal').classList.add('open');
+}
+
+function closeUserProfileModal() {
+  document.getElementById('user-profile-modal').classList.remove('open');
+  _viewingProfileId = null;
+}
+
+function _reportFromProfile() {
+  closeUserProfileModal();
+  // Pre-fill subject with profile id
+  document.getElementById('report-subject').value = `Жалоба на пользователя #${_viewingProfileId}`;
+  document.getElementById('report-message').value = '';
+  document.getElementById('report-error').style.display = 'none';
+  document.getElementById('report-modal').classList.add('open');
+}
+
+document.getElementById('user-profile-modal').addEventListener('click', function(e){
+  if (e.target===this) closeUserProfileModal();
+});
+
+async function loadMyProfile() {
+  const d = await fetch('/api/profile/account').then(r=>r.json()).catch(()=>null);
+  if (!d) return;
+
+  const avatarEl = document.getElementById('myprofile-avatar');
+  const initials = (d.display_name || d.first_name || d.username || '?')
+    .trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2);
+
+  if (d.avatar_url) {
+    const img = new Image();
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%';
+    img.src = d.avatar_url;
+    img.onerror = () => { avatarEl.innerHTML=''; avatarEl.textContent=initials; };
+    img.onload  = () => { avatarEl.innerHTML=''; avatarEl.appendChild(img); };
+  } else {
+    avatarEl.textContent = initials;
+  }
+
+  const name = d.display_name || d.persona_name || d.first_name || d.username || '—';
+  const nameEl = document.getElementById('myprofile-display-name');
+  nameEl.textContent = name;
+  const oldTick = document.getElementById('myprofile-verified-tick');
+  if (oldTick) oldTick.remove();
+  if (d.verified) {
+    const vb = document.createElement('span');
+    vb.id = 'myprofile-verified-tick';
+    vb.className = 'v-tick';
+    vb.title = 'Верифицирован';
+    vb.textContent = '✓';
+    nameEl.parentNode.insertBefore(vb, nameEl.nextSibling);
+  }
+  document.getElementById('account-display-name-input').value   = d.display_name || '';
+  document.getElementById('myprofile-tg-handle').textContent    = d.username ? `@${d.username}` : '';
+
+  document.getElementById('account-trade-link').value = d.trade_link || '';
+  _tradeLinkPublic = d.trade_link_public || 0;
+  _updateTradeLinkToggle();
+
+  // Steam link status
+  _renderSteamLinkStatus(d.steam_id, d.avatar_url, d.persona_name);
+
+  // Load successful trades count
+  const trades = await fetch(`/api/trades?tab=mine`).then(r=>r.json()).catch(()=>[]).then(all=>all.filter(t=>t.status==='closed'));
+  document.getElementById('myprofile-trades-count').textContent = trades.length ?? 0;
+}
+
+function _renderSteamLinkStatus(steamId, avatarUrl, personaName) {
+  const unlinked = document.getElementById('steam-unlinked-state');
+  const linked   = document.getElementById('steam-linked-state');
+  if (!steamId) {
+    unlinked.style.display = '';
+    linked.style.display   = 'none';
+    return;
+  }
+  unlinked.style.display = 'none';
+  linked.style.display   = '';
+  document.getElementById('steam-link-id').textContent = 'Steam ID: ' + steamId;
+  if (personaName) {
+    const nameEl = linked.querySelector('.steam-persona-name');
+    if (nameEl) nameEl.textContent = personaName;
+  }
+  if (avatarUrl) {
+    const av = document.getElementById('steam-link-avatar');
+    const img = new Image();
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:10px';
+    img.src = avatarUrl;
+    img.onload  = () => { av.innerHTML = ''; av.appendChild(img); };
+  }
+}
+
+async function unlinkSteam() {
+  if (!confirm('Отвязать Steam аккаунт?')) return;
+  const r = await fetch('/api/steam/unlink', { method: 'POST' }).then(r=>r.json());
+  if (r.ok) { toast('Steam аккаунт отвязан'); loadMyProfile(); }
+  else toast(r.error || 'Ошибка', 'error');
+}
+
+// Handle Steam OpenID callback hash
+(function() {
+  if (location.hash === '#steam_linked') {
+    history.replaceState(null, '', '/');
+    setTimeout(() => { toast('Steam аккаунт успешно привязан!'); loadMyProfile(); }, 300);
+  } else if (location.hash === '#steam_error') {
+    history.replaceState(null, '', '/');
+    setTimeout(() => toast('Ошибка авторизации Steam', 'error'), 300);
+  } else if (location.hash === '#steam_already_linked') {
+    history.replaceState(null, '', '/');
+    setTimeout(() => toast('Этот Steam аккаунт уже привязан к другому профилю', 'error'), 300);
+  }
+})();
+
+// ── Account profile card ─────────────────────────────────────────────────────
+
+let _tradeLinkPublic = 0;
+
+function _updateTradeLinkToggle() {
+  const btn = document.getElementById('trade-link-toggle');
+  if (_tradeLinkPublic) {
+    btn.textContent = '🔓 Публично';
+    btn.classList.add('public');
+  } else {
+    btn.textContent = '🔒 Приватно';
+    btn.classList.remove('public');
+  }
+}
+
+function toggleTradeLinkVisibility() {
+  _tradeLinkPublic = _tradeLinkPublic ? 0 : 1;
+  _updateTradeLinkToggle();
+}
+
+function startEditDisplayName() {
+  document.getElementById('myprofile-name-view').style.display = 'none';
+  document.getElementById('myprofile-name-edit').style.display = '';
+  document.getElementById('account-display-name-input').focus();
+}
+
+function cancelEditDisplayName() {
+  document.getElementById('myprofile-name-view').style.display = '';
+  document.getElementById('myprofile-name-edit').style.display = 'none';
+}
+
+async function saveProfileAccount() {
+  const display_name = document.getElementById('account-display-name-input').value.trim();
+  const trade_link   = document.getElementById('account-trade-link').value.trim();
+  const r = await fetch('/api/profile/account', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ display_name, trade_link, trade_link_public: _tradeLinkPublic })
+  }).then(r => r.json()).catch(() => null);
+  if (r && r.ok) {
+    document.getElementById('myprofile-display-name').textContent = display_name || '—';
+    cancelEditDisplayName();
+    toast('Профиль сохранён');
+  } else {
+    toast('Ошибка сохранения', 'error');
+  }
+}
+
+// ── Report modal ──────────────────────────────────────────────────────────────
+
+function openReportModal() {
+  document.getElementById('report-subject').value = '';
+  document.getElementById('report-message').value = '';
+  document.getElementById('report-error').style.display = 'none';
+  document.getElementById('report-modal').classList.add('open');
+}
+
+function closeReportModal() {
+  document.getElementById('report-modal').classList.remove('open');
+}
+
+async function submitReport() {
+  const subject = document.getElementById('report-subject').value.trim();
+  const message = document.getElementById('report-message').value.trim();
+  const errEl   = document.getElementById('report-error');
+  if (!subject || !message) {
+    errEl.textContent = 'Заполни тему и сообщение';
+    errEl.style.display = '';
+    return;
+  }
+  const r = await fetch('/api/report', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ subject, message })
+  }).then(r => r.json()).catch(() => null);
+  if (r && r.ok) {
+    closeReportModal();
+    toast('Репорт отправлен');
+  } else {
+    errEl.textContent = (r && r.error) || 'Ошибка отправки';
+    errEl.style.display = '';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function loadProfile() {
+  const [me, items] = await Promise.all([
+    fetch('/api/profile/me').then(r => r.json()).catch(() => null),
+    fetch('/api/profile/items').then(r => r.json()).catch(() => []),
+  ]);
+
+  const linkedCard = document.getElementById('profile-linked-card');
+  const invContent = document.getElementById('profile-inv-content');
+  if (me && me.steam_id) {
+    linkedCard.style.display = '';
+    invContent.style.display = '';
+    document.getElementById('profile-steam-id').textContent = `· ${me.steam_id}`;
+    document.getElementById('profile-subtitle').textContent =
+      `${items.length} скинов · Steam ID: ${me.steam_id}`;
+  } else {
+    linkedCard.style.display = 'none';
+    invContent.style.display = 'none';
+    document.getElementById('profile-subtitle').textContent =
+      'Привяжи Steam в разделе Профиль для отслеживания скинов';
+  }
+
+  // Quick stats + profit
+  const statsEl = document.getElementById('profile-quick-stats');
+  if (items.length) {
+    statsEl.style.display = 'grid';
+
+    const withPct1h  = items.filter(i => i.pct_1h  !== null && i.pct_1h  !== undefined);
+    const withPct24h = items.filter(i => i.pct_24h !== null && i.pct_24h !== undefined);
+
+    document.getElementById('pstat-count').textContent = items.length;
+    const upCnt      = withPct1h.filter(i => i.pct_1h > 0).length;
+    const downCnt    = withPct1h.filter(i => i.pct_1h < 0).length;
+    const neutralCnt = items.length - upCnt - downCnt;
+    document.getElementById('pstat-up').textContent      = upCnt;
+    document.getElementById('pstat-down').textContent    = downCnt;
+    const neutralEl = document.getElementById('pstat-neutral');
+    if (neutralEl) neutralEl.textContent = neutralCnt;
+
+    // Total portfolio value
+    const withPrice = items.filter(i => i.price);
+    const totalVal  = withPrice.reduce((s, i) => s + i.price, 0);
+    const totalValEl = document.getElementById('pstat-total-value');
+    if (totalValEl) totalValEl.textContent = withPrice.length ? currFmt(totalVal) : '—';
+
+    // Trend bar segments
+    const total = items.length || 1;
+    const segUp  = document.getElementById('pstat-seg-up');
+    const segNeu = document.getElementById('pstat-seg-neutral');
+    const segDn  = document.getElementById('pstat-seg-down');
+    if (segUp)  segUp.style.width  = (upCnt      / total * 100).toFixed(1) + '%';
+    if (segNeu) segNeu.style.width = (neutralCnt / total * 100).toFixed(1) + '%';
+    if (segDn)  segDn.style.width  = (downCnt    / total * 100).toFixed(1) + '%';
+
+    // Суммарный профит: Σ(price - price_Xh) для скинов с обеими ценами
+    function renderProfit(elAmt, elPct, priceKey) {
+      const valid = items.filter(i => i.price && i[priceKey]);
+      if (!valid.length) {
+        document.getElementById(elAmt).textContent = '—';
+        document.getElementById(elAmt).style.color = 'var(--muted)';
+        document.getElementById(elPct).textContent = '';
+        return;
+      }
+      const profitAmt = valid.reduce((s, i) => s + (i.price - i[priceKey]), 0);
+      const baseVal   = valid.reduce((s, i) => s + i[priceKey], 0);
+      const profitPct = baseVal > 0 ? (profitAmt / baseVal * 100) : 0;
+      const sign      = profitAmt >= 0 ? '+' : '';
+      const color     = profitAmt > 0 ? 'var(--green)' : profitAmt < 0 ? 'var(--red)' : 'var(--text)';
+      const amtEl = document.getElementById(elAmt);
+      amtEl.textContent = sign + currFmt(profitAmt);
+      amtEl.style.color = color;
+      const pEl = document.getElementById(elPct);
+      pEl.textContent = sign + profitPct.toFixed(1) + '%';
+      pEl.style.color = color;
+    }
+
+    renderProfit('pstat-profit24', 'pstat-profit24-pct', 'price_24h');
+    renderProfit('pstat-profit1h',  'pstat-profit1h-pct',  'price_1h');
+
+    // 24h delta pill badge
+    const pillEl = document.getElementById('pstat-profit24-pill');
+    if (pillEl) {
+      const valid24 = items.filter(i => i.price && i.price_24h);
+      if (valid24.length) {
+        const amt  = valid24.reduce((s, i) => s + (i.price - i.price_24h), 0);
+        const base = valid24.reduce((s, i) => s + i.price_24h, 0);
+        const pct  = base > 0 ? (amt / base * 100) : 0;
+        const cls  = pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat';
+        const sign = pct >= 0 ? '+' : '';
+        pillEl.innerHTML = `<span class="stat-delta-pill ${cls}">${sign}${pct.toFixed(1)}%</span>`;
+      } else {
+        pillEl.innerHTML = '';
+      }
+    }
+  } else {
+    statsEl.style.display = 'none';
+  }
+
+  // Разделяем кейсы и скины
+  // Pass full items list to React inventory via custom event
+  window.dispatchEvent(new CustomEvent('inv:loaded', { detail: { items } }));
+}
+
+let _rarityFetchInProgress = false;
+async function fetchProfileRarities() {
+  if (_rarityFetchInProgress) return;
+  _rarityFetchInProgress = true;
+
+  // Показываем статус
+  const countEl = document.getElementById('profile-items-count');
+  if (countEl) {
+    const orig = countEl.textContent;
+    countEl.textContent = orig + ' · загружаю категории...';
+    countEl.style.color = 'var(--accent)';
+  }
+
+  try {
+    let remaining = 1;
+    while (remaining > 0) {
+      const r = await fetch('/api/profile/fetch-rarities', {method: 'POST'})
+        .then(res => res.json()).catch(() => ({ok: false}));
+      if (!r.ok) break;
+      remaining = r.remaining;
+      if (r.updated === 0) break;
+    }
+    // Перезагружаем профиль с обновлёнными редкостями
+    await loadProfile();
+  } finally {
+    _rarityFetchInProgress = false;
+    countEl.style.color = '';
+  }
+}
+
 
 async function loadConfig() {
   const cfg = await fetch('/api/config').then(r => r.json());
@@ -1155,7 +3453,12 @@ async function parseUrl(val) {
 
 async function addItemFromUrl() {
   if (!parsedUrlItem) return;
-  await doAddItem(parsedUrlItem.name, parsedUrlItem.appid);
+  let rarity = '', rarityColor = '';
+  try {
+    const info = await fetch(`/api/steam/item-info/${encodeURIComponent(parsedUrlItem.name)}`).then(r => r.json());
+    if (info.ok) { rarity = info.rarity || ''; rarityColor = info.rarity_color || ''; }
+  } catch(e) {}
+  await doAddItem(parsedUrlItem.name, parsedUrlItem.appid, rarity, rarityColor);
 }
 
 // --- Search tab ---
@@ -1190,18 +3493,23 @@ async function doSearch(q) {
       dd.innerHTML = '<div style="padding:12px 14px;font-size:12px;color:var(--muted)">Ничего не найдено</div>';
       return;
     }
-    dd.innerHTML = results.map((item, i) => `
-      <div onclick="selectSearchItem(${i})"
+    dd.innerHTML = results.map((item, i) => {
+      const ri = rarityInfo(item.rarity, item.rarity_color);
+      const dot = ri ? `<span class="rarity-dot" style="background:${ri.color};margin-right:5px"></span>` : '';
+      const rlabel = ri ? `<span style="color:${ri.color};font-size:10px;margin-left:4px">${ri.name}</span>` : '';
+      return `<div onclick="selectSearchItem(${i})"
         data-name="${item.name.replace(/"/g,'&quot;')}"
         data-appid="${item.appid}"
+        data-rarity="${item.rarity || ''}"
+        data-rarity-color="${item.rarity_color || ''}"
         style="padding:10px 14px;font-size:13px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.04);transition:background .1s"
         onmouseover="this.style.background='var(--surface2)'"
         onmouseout="this.style.background=''"
       >
-        <div style="font-weight:500;color:var(--text)">${item.name}</div>
+        <div style="font-weight:500;color:var(--text);display:flex;align-items:center">${dot}${item.name}${rlabel}</div>
         <div style="font-size:11px;color:var(--muted);margin-top:2px">AppID: ${item.appid}</div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
     dd.style.display = 'block';
   } catch(e) {
     document.getElementById('search-dropdown').innerHTML =
@@ -1212,9 +3520,11 @@ async function doSearch(q) {
 function selectSearchItem(index) {
   const rows = document.querySelectorAll('#search-dropdown > div');
   const row  = rows[index];
-  const name  = row.dataset.name;
-  const appid = parseInt(row.dataset.appid);
-  selectedSearchItem = {name, appid};
+  const name        = row.dataset.name;
+  const appid       = parseInt(row.dataset.appid);
+  const rarity      = row.dataset.rarity || '';
+  const rarityColor = row.dataset.rarityColor || '';
+  selectedSearchItem = {name, appid, rarity, rarityColor};
   document.getElementById('search-selected-name').textContent = name;
   document.getElementById('search-selected').style.display    = 'block';
   document.getElementById('search-dropdown').style.display    = 'none';
@@ -1224,15 +3534,15 @@ function selectSearchItem(index) {
 
 async function addItemFromSearch() {
   if (!selectedSearchItem) return;
-  await doAddItem(selectedSearchItem.name, selectedSearchItem.appid);
+  await doAddItem(selectedSearchItem.name, selectedSearchItem.appid, selectedSearchItem.rarity, selectedSearchItem.rarityColor);
 }
 
 // --- Общая логика добавления ---
-async function doAddItem(name, appid) {
+async function doAddItem(name, appid, rarity='', rarityColor='') {
   const r = await fetch('/api/watchlist', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({name, appid})
+    body: JSON.stringify({name, appid, rarity, rarity_color: rarityColor})
   }).then(r => r.json());
   if (r.ok) {
     closeModal();
@@ -1445,6 +3755,17 @@ async function openItemDetail(name, appid) {
   // Показываем текущие данные из БД сразу
   showItemStats(history);
 
+  // Загружаем цены площадок
+  document.getElementById('sites-grid').innerHTML =
+    '<div class="site-tile-loading">⏳ Загружаю цены...</div>';
+  fetch(`/api/item-sites/${encoded}`)
+    .then(r => r.json())
+    .then(d => renderSiteTiles(d))
+    .catch(() => {
+      document.getElementById('sites-grid').innerHTML =
+        '<div class="site-tile-loading" style="color:var(--muted)">Не удалось загрузить</div>';
+    });
+
   // Импортируем историю со Steam в фоне — только один раз на предмет
   if (!importedItems.has(name)) {
     importedItems.add(name);
@@ -1602,9 +3923,42 @@ function renderItemChart(history) {
   canvas.ondblclick = () => { if (itemPriceChart) itemPriceChart.resetZoom(); };
 }
 
+function renderSiteTiles(data) {
+  const grid = document.getElementById('sites-grid');
+  const steamUsd = data.steam_usd;
+
+  function diffBadge(price) {
+    if (price == null || !steamUsd) return '';
+    const pct = (price - steamUsd) / steamUsd * 100;
+    const color = pct < -0.05 ? 'var(--green)' : pct > 0.05 ? 'var(--red)' : 'var(--muted)';
+    const sign  = pct >= 0 ? '+' : '';
+    return `<span class="site-price-diff" style="color:${color}">${sign}${pct.toFixed(1)}%</span>`;
+  }
+
+  function priceRow(label, price) {
+    const val = price != null
+      ? `<span class="site-price-value">$${price.toFixed(2)}</span>${diffBadge(price)}`
+      : `<span class="site-price-value" style="color:var(--muted)">—</span>`;
+    return `<div class="site-price-row">
+      <span class="site-price-label">${label}</span>${val}
+    </div>`;
+  }
+
+  grid.innerHTML = data.sites.map(site => {
+    return `<a class="site-tile" href="${site.url}" target="_blank"
+      style="border-top-color:${site.color}60;text-decoration:none"
+      onmouseover="this.style.borderTopColor='${site.color}'" onmouseout="this.style.borderTopColor='${site.color}60'">
+      <div class="site-tile-name" style="color:${site.color}">${site.name}</div>
+      ${priceRow('Купить', site.buy)}
+      ${priceRow('Продать', site.sell)}
+    </a>`;
+  }).join('');
+}
+
 function closeItemModal() {
   document.getElementById('item-modal').classList.remove('open');
   if (itemPriceChart) { itemPriceChart.destroy(); itemPriceChart = null; }
+  loadAll();
 }
 
 // Event delegation для кликабельных строк
@@ -1641,9 +3995,524 @@ document.getElementById('add-search').addEventListener('keydown', e => {
   }
 });
 
-// Автообновление каждые 30 сек
-loadAll();
-setInterval(loadAll, 30000);
+// Инициализация
+initAuth().then(() => {
+  loadAll();
+  setInterval(loadAll, 30000);
+});
+
+// ============================================================
+// TRADES
+// ============================================================
+let tradesTab = 'all';
+let allTradesData = [];
+let tradeCreateSelected = [];
+let tradeOfferSelected  = [];
+let tradeWants = [];
+let currentTradeId = null;
+let cachedMyInv = null;
+let wantsDebounce = null;
+const _iconCache = {};
+
+// ---- helpers ----
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function shortSkinName(n) { return n.replace(/\s*\([^)]+\)\s*$/, ''); }
+function wearFromName(n) {
+  const m = n.match(/\(([^)]+)\)$/);
+  if (!m) return null;
+  return {'Factory New':'FN','Minimal Wear':'MW','Field-Tested':'FT','Well-Worn':'WW','Battle-Scarred':'BS'}[m[1]] || null;
+}
+const WEAR_COLORS = {FN:'#4ade80',MW:'#60c8f5',FT:'#f5c842',WW:'#f59342',BS:'#f55c42'};
+function wearColor(wear) { return WEAR_COLORS[wear] || '#888'; }
+function wearBadgeStyle(wear) {
+  const c = wearColor(wear);
+  return `color:${c};background:${c}22;border:1px solid ${c}55`;
+}
+function timeAgo(ts) {
+  const d = Math.floor(Date.now()/1000 - ts);
+  if (d<60)    return 'только что';
+  if (d<3600)  return Math.floor(d/60)+' мин';
+  if (d<86400) return Math.floor(d/3600)+' ч';
+  return Math.floor(d/86400)+' д';
+}
+
+// ---- Skin thumbnail (card) ----
+// Puts data-need-icon on .tc-frame when icon not yet known; .tc-wear-b is a SIBLING
+function skinThumb(item) {
+  const wear = item.wear || wearFromName(item.name);
+  const frameAttr = item.icon ? '' : ` data-need-icon="${esc(item.name)}"`;
+  const frameInner = item.icon
+    ? `<img src="/api/steam/image/${esc(item.icon)}" style="width:100%;height:100%;object-fit:contain" onerror="this.style.opacity=.25">`
+    : `<span style="font-size:18px">🔫</span>`;
+  return `<div class="tc-skin">
+    <div class="tc-frame"${frameAttr}>${frameInner}</div>
+    <div class="tc-nm">${esc(shortSkinName(item.name))}</div>
+    ${wear ? `<div class="tc-wear-pill" style="${wearBadgeStyle(wear)}">${wear}</div>` : ''}
+  </div>`;
+}
+
+// ---- Detail modal thumbnail ----
+function detailThumb(item) {
+  const wear = item.wear || wearFromName(item.name);
+  const frameAttr = item.icon ? '' : ` data-need-icon="${esc(item.name)}"`;
+  const frameInner = item.icon
+    ? `<img src="/api/steam/image/${esc(item.icon)}" style="width:100%;height:100%;object-fit:contain" onerror="this.style.opacity=.25">`
+    : `<span style="font-size:26px">🔫</span>`;
+  return `<div class="td-skin">
+    <div class="td-frame"${frameAttr}>${frameInner}</div>
+    <div class="td-nm">${esc(shortSkinName(item.name))}</div>
+    ${wear ? `<div class="td-wear" style="${wearBadgeStyle(wear)}">${wear}</div>` : ''}
+  </div>`;
+}
+
+// ---- Lazy icon loader (same approach as item detail modal) ----
+async function lazyLoadIcons() {
+  const els = [...document.querySelectorAll('[data-need-icon]')];
+  const unique = [...new Set(els.map(e => e.dataset.needIcon))];
+  if (!unique.length) return;
+  for (const name of unique) {
+    if (_iconCache[name] !== undefined) {
+      if (_iconCache[name]) _applyIcon(name, _iconCache[name]);
+      continue;
+    }
+    // throttle like the item modal does
+    await new Promise(r => setTimeout(r, 220));
+    try {
+      const d = await fetch(`/api/steam/item-info/${encodeURIComponent(name)}`).then(r=>r.json());
+      const icon = d.ok && d.icon_url ? d.icon_url : null;
+      _iconCache[name] = icon;
+      if (icon) _applyIcon(name, icon);
+    } catch { _iconCache[name] = null; }
+  }
+}
+
+function _applyIcon(name, iconUrl) {
+  document.querySelectorAll('[data-need-icon]').forEach(el => {
+    if (el.dataset.needIcon !== name) return;
+    el.removeAttribute('data-need-icon');
+    el.innerHTML = `<img src="/api/steam/image/${iconUrl}" style="width:100%;height:100%;object-fit:contain" onerror="this.style.opacity=.25">`;
+  });
+}
+
+// ---- Load & render ----
+async function loadTrades() {
+  const grid = document.getElementById('trades-grid');
+  grid.innerHTML = '<div class="empty">Загрузка...</div>';
+  const data = await fetch(`/api/trades?tab=${tradesTab}`).then(r=>r.json()).catch(()=>[]);
+  allTradesData = data;
+  applyTradeFilters();
+}
+
+function applyTradeFilters() {
+  const grid = document.getElementById('trades-grid');
+  const q    = (document.getElementById('tf-name')?.value || '').toLowerCase().trim();
+  const wear = document.getElementById('tf-wear')?.value || '';
+  const cat  = document.getElementById('tf-cat')?.value  || '';
+
+  const filtered = allTradesData.filter(t => {
+    if (q) {
+      // Поиск по номеру трейда: "#42", "42", "#0042"
+      const numStr = q.replace(/^#/, '');
+      if (/^\d+$/.test(numStr) && String(t.id) === numStr) return true;
+      if ((t.trade_number || '').toLowerCase().includes(q)) return true;
+      const allNames = [...t.items, ...(t.wants||[])].map(i=>i.name.toLowerCase());
+      if (!allNames.some(n=>n.includes(q))) return false;
+    }
+    if (wear) {
+      const allWears = [...t.items, ...(t.wants||[])].map(i=>i.wear || wearFromName(i.name));
+      if (!allWears.includes(wear)) return false;
+    }
+    if (cat) {
+      const allTypes = [...t.items, ...(t.wants||[])].map(i=>(i.item_type||'').toLowerCase());
+      if (!allTypes.some(tp=>tp.includes(cat))) return false;
+    }
+    return true;
+  });
+
+  const msg = {all:'Нет активных трейдов',active_mine:'У вас нет активных трейдов',mine:'Вы ещё не создавали трейдов',my_offers:'Вы ещё не делали предложений'};
+  grid.innerHTML = filtered.length
+    ? filtered.map(t=>renderTradeCard(t)).join('')
+    : `<div class="empty" style="">${msg[tradesTab]||'Пусто'}</div>`;
+  lazyLoadIcons();
+}
+
+function renderTradeCard(t) {
+  const offering = t.items.slice(0,5).map(i=>skinThumb(i)).join('');
+
+  const wantsHtml = t.wants_any
+    ? `<div class="tc-wants-any">Принимает<br>любые<br>предложения</div>`
+    : t.wants.slice(0,5).map(w=>skinThumb(w)).join('');
+
+  const badge = t.status==='closed'    ? '<span class="tc-bdg-closed">ЗАКРЫТ</span>'
+              : t.status==='cancelled'  ? '<span class="tc-bdg-cancelled">ОТМЕНЁН</span>'
+              : t.is_mine               ? '<span class="tc-bdg-mine">МОЙ</span>' : '';
+
+  // footer — offer count only visible to owner
+  let actions;
+  if (t.is_mine) {
+    actions = `
+      ${t.note ? `<span class="tc-note">"${esc(t.note)}"</span>` : ''}
+      <div class="tc-right">
+        <span class="tc-cnt ${t.offer_count>0?'has':''}" onclick="openTradeOffers(${t.id},'${esc(t.owner_id)}')">${t.offer_count} предл.</span>
+        ${t.status==='open'?`<button class="btn btn-danger btn-sm" onclick="cancelTrade(${t.id},event)">Отменить</button>`:''}
+      </div>`;
+  } else {
+    actions = `
+      ${t.note ? `<span class="tc-note">"${esc(t.note)}"</span>` : ''}
+      <div class="tc-right">
+        ${t.status==='open'
+          ? `<button class="btn btn-primary btn-sm" onclick="openTradeDetail(${t.id})">Предложить →</button>`
+          : `<button class="btn btn-ghost btn-sm" onclick="openTradeDetail(${t.id})">Детали</button>`}
+      </div>`;
+  }
+
+  return `<div class="trade-card ${t.is_mine?'mine':''} status-${t.status}">
+    <div class="tc-info">
+      <span class="tc-owner" title="Трейд ${esc(t.trade_number||'')}">${esc(t.trade_number||('#'+t.id))}</span>
+      <span class="tc-time" style="cursor:pointer;color:var(--accent);opacity:.7" onclick="openUserProfile('${esc(t.owner_id)}')">👤 Профиль</span>
+      <div class="tc-meta">${badge}<span class="tc-time">${timeAgo(t.created_at)}</span></div>
+    </div>
+    <div class="tc-section">
+      <div class="tc-lbl">Отдаёт</div>
+      <div class="tc-skins">${offering}</div>
+    </div>
+    <div class="tc-div">⇄</div>
+    <div class="tc-section">
+      <div class="tc-lbl">Хочет получить</div>
+      <div class="tc-skins">${wantsHtml}</div>
+    </div>
+    <div class="tc-actions">${actions}</div>
+  </div>`;
+}
+
+function switchTradesTab(tab) {
+  tradesTab = tab;
+  ['all','active_mine','mine','my_offers'].forEach(t => {
+    document.getElementById('ttab-'+t).classList.toggle('active', t===tab);
+  });
+  loadTrades();
+}
+
+// ---- Cancel ----
+async function cancelTrade(id, e) {
+  if (e) e.stopPropagation();
+  if (!confirm('Отменить трейд?')) return;
+  const r = await fetch(`/api/trades/${id}`,{method:'DELETE'}).then(r=>r.json());
+  if (r.ok) { toast('Трейд отменён'); loadTrades(); }
+  else toast(r.error||'Ошибка','error');
+}
+
+// ---- Inventory loader ----
+async function loadMyInv() {
+  if (cachedMyInv) return cachedMyInv;
+  cachedMyInv = await fetch('/api/profile/steam-items').then(r=>r.ok?r.json():[]).catch(()=>[]);
+  return cachedMyInv;
+}
+
+function renderInvSelector(containerId, inv, selectedArr) {
+  const cont = document.getElementById(containerId);
+  if (!inv.length) { cont.innerHTML='<div class="empty">Инвентарь не привязан или пуст</div>'; return; }
+  cont.innerHTML = inv.map(item => {
+    const wear = wearFromName(item.name);
+    const nm   = item.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const sel  = selectedArr.includes(item.name);
+    return `<div class="inv-sel-item ${sel?'sel':''}" onclick="toggleInvSel('${containerId}','${nm}')">
+      <span class="inv-sel-chk">✓</span>
+      <div class="inv-sel-frame">
+        ${item.icon_url
+          ? `<img src="/api/steam/image/${esc(item.icon_url)}" onerror="this.style.opacity=.25">`
+          : `<span data-need-icon="${esc(item.name)}" style="font-size:16px">🔫</span>`}
+      </div>
+      <div class="inv-sel-nm">${esc(shortSkinName(item.name))}</div>
+      ${wear ? `<div class="inv-sel-wr">${wear}</div>` : ''}
+    </div>`;
+  }).join('');
+  lazyLoadIcons();
+}
+
+function toggleInvSel(containerId, name) {
+  const isCreate = containerId==='trade-create-inv';
+  const arr = isCreate ? tradeCreateSelected : tradeOfferSelected;
+  const idx = arr.indexOf(name);
+  if (idx===-1) arr.push(name); else arr.splice(idx,1);
+  document.querySelectorAll(`#${containerId} .inv-sel-item`).forEach(div => {
+    const m = (div.getAttribute('onclick')||'').match(/toggleInvSel\('[^']+','([^']+)'\)/);
+    if (m) div.classList.toggle('sel', arr.includes(m[1]));
+  });
+  document.getElementById(isCreate?'trade-create-sel-info':'trade-offer-sel-info').textContent = `Выбрано: ${arr.length}`;
+}
+
+// ---- Create trade ----
+async function openCreateTrade() {
+  tradeCreateSelected=[]; tradeWants=[];
+  document.getElementById('trade-create-note').value='';
+  document.getElementById('trade-create-error').style.display='none';
+  document.getElementById('trade-wants-input').value='';
+  document.getElementById('trade-wants-drop').classList.remove('open');
+  renderWantsTags();
+  const inv = await loadMyInv();
+  renderInvSelector('trade-create-inv', inv, tradeCreateSelected);
+  document.getElementById('trade-create-sel-info').textContent='Выбрано: 0';
+  document.getElementById('trade-create-modal').classList.add('open');
+}
+function closeTradeCreateModal() {
+  document.getElementById('trade-create-modal').classList.remove('open');
+}
+document.getElementById('trade-create-modal').addEventListener('click', function(e){
+  if (e.target===this) closeTradeCreateModal();
+});
+
+async function submitCreateTrade() {
+  if (!tradeCreateSelected.length) { showTradeCreateError('Выберите хотя бы один предмет'); return; }
+  if (tradeCreateSelected.length > 5) { showTradeCreateError('Максимум 5 предметов в одном трейде'); return; }
+  const r = await fetch('/api/trades',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({items:tradeCreateSelected, wants:tradeWants, note:document.getElementById('trade-create-note').value.trim()})
+  }).then(r=>r.json());
+  if (r.ok) {
+    closeTradeCreateModal(); toast('Трейд выставлен!'); cachedMyInv=null;
+    if (tradesTab!=='mine') switchTradesTab('mine'); else loadTrades();
+  } else showTradeCreateError(r.error||'Ошибка');
+}
+function showTradeCreateError(m) { const e=document.getElementById('trade-create-error'); e.textContent=m; e.style.display='block'; }
+
+// ---- Wants autocomplete ----
+function renderWantsTags() {
+  document.getElementById('trade-wants-tags').innerHTML = tradeWants.map(n =>
+    `<span class="wants-tag" onclick="removeWant('${esc(n.replace(/'/g,"&#39;"))}')">${esc(shortSkinName(n))} <span style="opacity:.6;font-size:10px">✕</span></span>`
+  ).join('');
+}
+function removeWant(n) { tradeWants=tradeWants.filter(x=>x!==n); renderWantsTags(); }
+function onWantsInput(inp) {
+  clearTimeout(wantsDebounce);
+  const q=inp.value.trim();
+  if (q.length<2) { document.getElementById('trade-wants-drop').classList.remove('open'); return; }
+  wantsDebounce=setTimeout(()=>fetchWantsSuggestions(q),300);
+}
+async function fetchWantsSuggestions(q) {
+  let results = await fetch(`/api/items/search?q=${encodeURIComponent(q)}`).then(r=>r.json()).catch(()=>[]);
+  if (results.length<4) {
+    const steam = await fetch(`/api/steam/search?q=${encodeURIComponent(q)}`).then(r=>r.json()).catch(()=>[]);
+    const ex=new Set(results.map(r=>r.name));
+    for (const s of steam) {
+      if (!ex.has(s.name)) results.push({name:s.name,wear:wearFromName(s.name),icon:s.icon});
+      if (results.length>=12) break;
+    }
+  }
+  renderWantsDrop(results);
+}
+function renderWantsDrop(items) {
+  const drop=document.getElementById('trade-wants-drop');
+  if (!items.length) { drop.classList.remove('open'); return; }
+  drop.innerHTML=items.map(it=>`
+    <div class="ac-item" onclick="selectWant('${esc(it.name.replace(/'/g,"&#39;"))}')">
+      ${it.icon?`<img class="ac-item-img" src="/api/steam/image/${esc(it.icon)}" onerror="this.style.opacity=0">`:'<div class="ac-item-img"></div>'}
+      <span class="ac-item-nm">${esc(shortSkinName(it.name))}</span>
+      ${it.wear?`<span class="ac-item-wr">${it.wear}</span>`:''}
+    </div>`).join('');
+  drop.classList.add('open');
+}
+function selectWant(name) {
+  if (!tradeWants.includes(name)) tradeWants.push(name);
+  document.getElementById('trade-wants-input').value='';
+  document.getElementById('trade-wants-drop').classList.remove('open');
+  renderWantsTags();
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.ac-wrap')) document.querySelectorAll('.ac-drop').forEach(d=>d.classList.remove('open'));
+});
+
+// ---- Trade detail / make offer ----
+async function openTradeDetail(tradeId) {
+  currentTradeId=tradeId; tradeOfferSelected=[];
+  document.getElementById('trade-offer-error').style.display='none';
+  document.getElementById('trade-offer-note').value='';
+  let t=null;
+  for (const tab of ['all','mine','my_offers']) {
+    const data=await fetch(`/api/trades?tab=${tab}`).then(r=>r.json()).catch(()=>[]);
+    t=data.find(x=>x.id===tradeId);
+    if (t) break;
+  }
+  if (!t) { toast('Трейд не найден','error'); return; }
+  document.getElementById('trade-detail-content').innerHTML=buildTradeDetailHtml(t);
+  const offerSec=document.getElementById('trade-offer-section');
+  const detFoot=document.getElementById('trade-detail-footer');
+  if (!t.is_mine && t.status==='open') {
+    offerSec.style.display='block'; detFoot.style.display='none';
+    const inv=await loadMyInv();
+    renderInvSelector('trade-offer-inv', inv, tradeOfferSelected);
+    document.getElementById('trade-offer-sel-info').textContent='Выбрано: 0';
+  } else {
+    offerSec.style.display='none'; detFoot.style.display='flex';
+  }
+  document.getElementById('trade-detail-modal').classList.add('open');
+  lazyLoadIcons();
+}
+
+function buildTradeDetailHtml(t) {
+  const sLbl={open:'Открыт',closed:'Закрыт',cancelled:'Отменён'};
+  const sCls={open:'badge-up',closed:'badge-neutral',cancelled:'badge-down'};
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div class="modal-title" style="margin:0">Трейд #${t.id}</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="badge ${sCls[t.status]||'badge-neutral'}">${sLbl[t.status]||t.status}</span>
+        <span style="font-size:12px;color:var(--muted)">${timeAgo(t.created_at)}</span>
+      </div>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Предлагает</div>
+        <button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 8px" onclick="openUserProfile('${esc(t.owner_id)}')">👤 Профиль</button>
+      </div>
+      <div class="td-skins">${t.items.map(i=>detailThumb(i)).join('')}</div>
+    </div>
+    <div style="margin-bottom:${t.note?12:4}px">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px">Хочет получить</div>
+      <div class="td-skins">${t.wants_any ? '<span style="font-size:13px;color:var(--muted);font-style:italic">Принимает любые предложения</span>' : t.wants.map(w=>detailThumb(w)).join('')}</div>
+    </div>
+    ${t.note?`<div style="font-size:13px;color:var(--muted);font-style:italic;padding:8px 0;border-top:1px solid var(--border)">"${esc(t.note)}"</div>`:''}`;
+}
+
+function closeTradeDetailModal() {
+  document.getElementById('trade-detail-modal').classList.remove('open'); currentTradeId=null;
+}
+document.getElementById('trade-detail-modal').addEventListener('click', function(e){
+  if (e.target===this) closeTradeDetailModal();
+});
+
+async function submitOffer() {
+  if (!tradeOfferSelected.length) {
+    const el=document.getElementById('trade-offer-error');
+    el.textContent='Выберите хотя бы один предмет'; el.style.display='block'; return;
+  }
+  const r=await fetch(`/api/trades/${currentTradeId}/offers`,{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({items:tradeOfferSelected, note:document.getElementById('trade-offer-note').value.trim()})
+  }).then(r=>r.json());
+  if (r.ok) { closeTradeDetailModal(); toast('Предложение отправлено!'); loadTrades(); }
+  else {
+    const el=document.getElementById('trade-offer-error');
+    el.textContent = r.error==='trade_link_missing' ? 'Привяжите Trade Link в профиле чтобы отправлять предложения' : (r.error||'Ошибка');
+    el.style.display='block';
+  }
+}
+
+// ---- Offers modal (owner only) ----
+let _currentTradeOwnerId = null;
+
+function buildMiniProfile(p, telegramId) {
+  const displayName = p && (p.display_name || p.first_name || p.username) || null;
+  const name = esc(displayName || ('#' + String(telegramId).slice(-6)));
+  const handle = p && p.username ? esc('@' + p.username) : '';
+  const avatarHtml = (p && p.avatar_url)
+    ? `<img src="${esc(p.avatar_url)}" alt="">`
+    : name.replace(/&amp;/g,'&').slice(0,2).toUpperCase();
+  const vtick = (p && p.verified) ? `<span class="v-tick" title="Верифицирован">✓</span>` : '';
+  return `<div class="mini-profile" onclick="openUserProfile('${esc(telegramId)}')">
+    <div class="mini-avatar">${avatarHtml}</div>
+    <div>
+      <div class="mini-name">${name}${vtick}</div>
+      ${handle ? `<div class="mini-handle">${handle}</div>` : ''}
+    </div>
+  </div>`;
+}
+
+async function openTradeOffers(tradeId, ownerId) {
+  currentTradeId=tradeId;
+  _currentTradeOwnerId=ownerId||null;
+  document.getElementById('offers-list-content').innerHTML='<div class="empty">Загрузка...</div>';
+  document.getElementById('trade-offers-modal').classList.add('open');
+  const [offers, ownerProfile] = await Promise.all([
+    fetch(`/api/trades/${tradeId}/offers`).then(r=>r.json()).catch(()=>[]),
+    ownerId ? fetch(`/api/user/${encodeURIComponent(ownerId)}/profile`).then(r=>r.json()).catch(()=>null) : Promise.resolve(null)
+  ]);
+  renderOffersList(offers, ownerProfile, ownerId);
+  lazyLoadIcons();
+}
+
+async function renderOffersList(offers, ownerProfile, ownerId) {
+  const cont=document.getElementById('offers-list-content');
+
+  // Fetch offerer profiles in parallel
+  const offererIds=[...new Set(offers.map(o=>o.offerer_id))];
+  const profileMap={};
+  await Promise.all(offererIds.map(async id=>{
+    const p=await fetch(`/api/user/${encodeURIComponent(id)}/profile`).then(r=>r.json()).catch(()=>null);
+    profileMap[id]=p;
+  }));
+
+  let html='';
+
+  // Owner row (only shown if we know the owner)
+  if (ownerId) {
+    html+=`<div class="offers-users-row">
+      <div style="flex:1">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:6px">Владелец трейда</div>
+        ${buildMiniProfile(ownerProfile, ownerId)}
+      </div>
+    </div>`;
+  }
+
+  if (!offers.length) { cont.innerHTML=html+'<div class="empty">Предложений ещё нет</div>'; return; }
+
+  const lbl={pending:'Ожидает',accepted:'Принято',declined:'Отклонено'};
+  html+=offers.map(o=>{
+    const steamBtn=o.offerer_trade_link
+      ?`<button class="btn btn-primary btn-sm" onclick="window.open('${o.offerer_trade_link.replace(/'/g,"\\'")}','_blank')">🔗 Отправить предложение в Steam</button>`
+      :`<button class="btn btn-ghost btn-sm" disabled title="Пользователь не привязал Trade Link">🔗 Trade Link не указан</button>`;
+    const acts=o.status==='pending'?`
+      <div class="offer-acts">
+        <button class="btn btn-success btn-sm" onclick="respondOffer(${o.id},'accept')">✓ Принять</button>
+        <button class="btn btn-danger btn-sm"  onclick="respondOffer(${o.id},'decline')">✕ Отклонить</button>
+        ${steamBtn}
+      </div>`:
+      o.status==='accepted'?`<div class="offer-acts">${steamBtn}</div>`:'';
+    return `<div class="offer-item">
+      <div class="offer-hd">
+        ${buildMiniProfile(profileMap[o.offerer_id]||null, o.offerer_id)}
+        <span class="offer-sb ${o.status}">${lbl[o.status]||o.status}</span>
+      </div>
+      <div class="tc-skins">${o.items.map(it=>skinThumb(it)).join('')}</div>
+      ${o.note?`<div class="offer-note">"${esc(o.note)}"</div>`:''}
+      ${acts}
+    </div>`;
+  }).join('');
+  cont.innerHTML=html;
+}
+
+async function respondOffer(offerId, action) {
+  const r=await fetch(`/api/trades/${currentTradeId}/offers/${offerId}/respond`,{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action})
+  }).then(r=>r.json());
+  if (r.ok) {
+    toast(action==='accept'?'Предложение принято!':'Предложение отклонено');
+    const offers=await fetch(`/api/trades/${currentTradeId}/offers`).then(r=>r.json()).catch(()=>[]);
+    const ownerProfile=_currentTradeOwnerId?await fetch(`/api/user/${encodeURIComponent(_currentTradeOwnerId)}/profile`).then(r=>r.json()).catch(()=>null):null;
+    renderOffersList(offers,ownerProfile,_currentTradeOwnerId); loadTrades();
+  } else {
+    if (r.error==='trade_link_missing_owner') {
+      toast('Привяжите Trade Link в профиле чтобы принимать трейды','error');
+    } else if (r.error==='trade_link_missing_offerer') {
+      toast('У пользователя не привязан Trade Link','error');
+    } else {
+      toast(r.error||'Ошибка','error');
+    }
+  }
+}
+
+function closeOffersModal() {
+  document.getElementById('trade-offers-modal').classList.remove('open'); currentTradeId=null;
+}
+document.getElementById('trade-offers-modal').addEventListener('click', function(e){
+  if (e.target===this) closeOffersModal();
+});
+
 </script>
+<link rel="stylesheet" href="/app/index.css">
+<script type="module" src="/app/index.js"></script>
 </body>
 </html>
